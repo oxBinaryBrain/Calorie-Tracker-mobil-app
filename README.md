@@ -57,15 +57,20 @@ meals, movement, and tracker notes.
 
 **Trackers**
 
-Water with one-tap amounts, weight with a trend chart, sleep with hours and
-quality. Everything is optional and nothing nags.
+Water with one-tap amounts and a 7-day history strip, weight with a 90-day
+trend chart and pace to target, sleep with hours and a quality choice. Edits
+save on blur, Enter, or an explicit Save button (20–400 kg, 0–24 h) and survive
+water quick-adds. Everything is optional and nothing nags.
 
 ![Trackers screen](docs/screenshots/trackers.png)
 
 **Weekly summary**
 
-Stat tiles and a calories-by-day bar chart for the week, with your target as a
-faint reference line — not a ceiling. A week-over-week comparison sits below.
+A hero card shows the weekly average against your target with a 14-bar
+last-week vs this-week chart and a dashed target line. Below: tinted
+Nutrition tiles (protein, carbs, fat per logged day) and Body tiles (weight
+change, average sleep, water), a single Trends chart for longer windows, and
+icon-led Solutions derived from your data.
 
 ![Weekly summary screen](docs/screenshots/summary.png)
 
@@ -100,15 +105,15 @@ Save a day's meals as a template and reuse it on days you eat the same thing.
 ```
 src/
   api/          ApiClient contract; HttpApi (real) + MockApi (local)
-  db/           expo-sqlite repositories — the persistence boundary
-  services/     Mifflin-St Jeor targets, RevenueCat, notifications, food DB
+  db/           expo-sqlite and AsyncStorage (web) repositories — single persistence boundary, merge-safe upserts
+  services/     Mifflin-St Jeor targets, weight plan, RevenueCat, notifications, food DB
   stores/       zustand: session, preferences, toasts
   hooks/        react-query hooks over the repos
-  theme/        light/dark Paper themes; no alarm red anywhere
-  screens/      auth, onboarding, home, logging, diary, trackers, summary, account
-  components/   shared UI (calorie ring, macro tiles, entry list)
+  theme/        light/dark Paper themes; semantic tints for macros and trackers; no alarm red
+  screens/      auth, onboarding, home (+ parts), diary, trackers, summary, account
+  components/   shared UI split into ui/ (header, charts, entries, feedback, styles)
   types/        shared TypeScript contracts
-docs/BACKEND.md   exact endpoints and the server-side parse prompt
+  docs/BACKEND.md   exact endpoints and the server-side parse prompt
 ```
 
 ## Run it
@@ -148,7 +153,7 @@ the exact request and response shapes are in
 npm test
 ```
 
-Vitest covers the parser and the target calculations.
+Vitest covers the parser, target calculations, weight plan, repos, utils, and week helpers (74 tests).
 
 ## Design principles
 
