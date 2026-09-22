@@ -5,9 +5,15 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
+    "scheme": "caloria",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "Caloria uses the camera to photograph your plate and estimate its nutrition.",
+        "NSPhotoLibraryUsageDescription": "Caloria can pick a photo of your meal from your library to estimate its nutrition.",
+        "NSFaceIDUsageDescription": "Caloria uses Face ID to keep your diary private."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -16,10 +22,45 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "CAMERA",
+        "READ_MEDIA_IMAGES"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "backgroundColor": "#F6F7F5",
+    "plugins": [
+      "expo-secure-store",
+      "expo-sqlite",
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "Caloria uses the camera to photograph your plate and estimate its nutrition."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "mode": "local"
+        }
+      ],
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#F6F7F5",
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 160,
+          "dark": {
+            "backgroundColor": "#181A1C",
+            "image": "./assets/splash-icon.png",
+            "imageWidth": 160
+          }
+        }
+      ]
+    ]
   }
 }
