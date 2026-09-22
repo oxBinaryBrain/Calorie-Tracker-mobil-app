@@ -1,6 +1,7 @@
 import * as React from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { IconButton, TextInput, useTheme } from 'react-native-paper';
+import { useQueryClient } from '@tanstack/react-query';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { DiaryTabParams } from '../../navigation/types';
 import { useDayEntries, todayTotals, useSaveMealTemplate } from '../../hooks/queries';
@@ -14,10 +15,21 @@ type Props = NativeStackScreenProps<DiaryTabParams, 'DayDetail'>;
 export default function DayDetailScreen({ route, navigation }: Props) {
   const theme = useTheme();
   const show = useToasts((s) => s.show);
+  const qc = useQueryClient();
   const { date } = route.params;
   const entries = useDayEntries(date);
   const saveTemplate = useSaveMealTemplate();
   const totals = todayTotals(entries.data);
+  const [refreshing, setRefreshing] = React.useState(false);
+
+  const onRefresh = React.useCallback(async () => {
+    setRefreshing(true);
+    await Promise.all([
+      qc.invalidateQueries({ queryKey: ['entries'] }),
+      qc.invalidateQueries({ queryKey: ['trackers'] }),
+    ]);
+    setRefreshing(false);
+  }, [qc]);
 
   const foodEntries = (entries.data ?? []).filter((e) => e.type === 'food');
   const [naming, setNaming] = React.useState(false);
@@ -67,11 +79,23 @@ export default function DayDetailScreen({ route, navigation }: Props) {
               iconColor={theme.colors.primary}
               onPress={() => setNaming((v) => !v)}
               accessibilityLabel="Save this day's meals as a template"
+              accessibilityRole="button"
             />
           ) : null
         }
       />
-      <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
+      <ScrollView
+        contentContainerStyle={{ paddingBottom: 32 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => void onRefresh()}
+            tintColor={theme.colors.primary}
+            colors={[theme.colors.primary]}
+            progressBackgroundColor={theme.colors.surface}
+          />
+        }
+      >
         <View style={styles.tiles}>
           <StatTile label="Consumed" value={`${formatKcal(totals.calories)} kcal`} />
           <StatTile label="Burned" value={totals.burned > 0 ? `${formatKcal(totals.burned)} kcal` : '—'} />
@@ -93,6 +117,7 @@ export default function DayDetailScreen({ route, navigation }: Props) {
                 style={styles.namingInput}
                 onSubmitEditing={() => void onSaveTemplate()}
                 returnKeyType="done"
+                accessibilityLabel="Template name"
               />
               <Pressable
                 onPress={() => void onSaveTemplate()}

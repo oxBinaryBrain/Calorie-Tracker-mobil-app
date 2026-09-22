@@ -53,8 +53,14 @@ export default function SettingsScreen() {
 
       <SectionTitle text="Units" />
       <View style={styles.switchRow}>
-        <Text style={{ color: theme.colors.onSurface }}>Metric (kg, cm)</Text>
-        <Switch value={units === 'metric'} onValueChange={(v) => setUnits(v ? 'metric' : 'imperial')} />
+        <Text style={{ color: theme.colors.onSurface }} accessibilityRole="text">
+          Metric (kg, cm)
+        </Text>
+        <Switch
+          value={units === 'metric'}
+          onValueChange={(v) => setUnits(v ? 'metric' : 'imperial')}
+          accessibilityLabel="Use metric units"
+        />
       </View>
       <Text style={[styles.hint, { color: theme.colors.onSurfaceVariant }]}>
         Imperial shows lb/oz labels where supported.
@@ -64,20 +70,35 @@ export default function SettingsScreen() {
 
       <SectionTitle text="Daily reminder" />
       <View style={styles.switchRow}>
-        <Text style={{ color: theme.colors.onSurface }}>Gentle nudge to log</Text>
-        <Switch value={reminderEnabled} onValueChange={(v) => void setReminder(v)} />
+        <Text style={{ color: theme.colors.onSurface }} accessibilityRole="text">
+          Gentle nudge to log
+        </Text>
+        <Switch
+          value={reminderEnabled}
+          onValueChange={(v) => void setReminder(v)}
+          accessibilityLabel="Daily logging reminder"
+        />
       </View>
       {reminderEnabled ? (
-        <View style={styles.hours}>
+        <View style={styles.hours} accessibilityRole="radiogroup" accessibilityLabel="Reminder hour">
           {HOURS.map((h) => (
-            <Chip key={h} selected={reminderHour === h} onPress={() => void setReminder(true, h)} style={styles.chip} compact>
+            <Chip
+              key={h}
+              selected={reminderHour === h}
+              onPress={() => void setReminder(true, h)}
+              style={styles.chip}
+              compact
+              accessibilityRole="radio"
+              accessibilityState={{ selected: reminderHour === h }}
+              accessibilityLabel={`${h}:00`}
+            >
               {h}:00
             </Chip>
           ))}
         </View>
       ) : null}
       <Text style={[styles.hint, { color: theme.colors.onSurfaceVariant }]}>
-        One quiet local notification a day. No badges, no streaks.
+        One notification a day at the time you pick. No badges, no streaks.
       </Text>
 
       <Divider style={styles.divider} />

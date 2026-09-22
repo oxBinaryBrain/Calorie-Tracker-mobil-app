@@ -2,7 +2,10 @@ import * as React from 'react';
 import { DarkTheme as NavDark, DefaultTheme as NavLight, NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Platform, StyleSheet } from 'react-native';import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import type { BottomTabBarButtonProps } from '@react-navigation/bottom-tabs';
+import { PlatformPressable } from '@react-navigation/elements';
+import { Platform, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useTheme } from 'react-native-paper';
 
@@ -72,10 +75,10 @@ const TAB_ICONS: Record<string, keyof typeof MaterialCommunityIcons.glyphMap> = 
 
 const TAB_ICONS_FOCUSED: Record<string, keyof typeof MaterialCommunityIcons.glyphMap> = {
   HomeTab: 'home-variant',
-  DiaryTab: 'calendar',
-  TrackersTab: 'cup',
+  DiaryTab: 'calendar-blank',
+  TrackersTab: 'water',
   SummaryTab: 'chart-box',
-  AccountTab: 'account',
+  AccountTab: 'account-circle',
 };
 
 function OnboardingNavigator() {
@@ -146,14 +149,45 @@ function AccountStackNavigator() {
   );
 }
 
-function TabIcon({ route, color, size, focused }: { route: any; color: string; size: number; focused: boolean }) {
+function TabBarIcon({ route, color, focused }: { route: { name: string }; color: string; size: number; focused: boolean }) {
+  const theme = useTheme();
   const name = focused ? TAB_ICONS_FOCUSED[route.name] ?? TAB_ICONS[route.name] : TAB_ICONS[route.name];
-  return <MaterialCommunityIcons name={name} size={23} color={color} />;
+  return (
+    <View style={[styles.iconPill, focused && { backgroundColor: theme.colors.primaryContainer }]}>
+      <MaterialCommunityIcons name={name} size={22} color={color} />
+    </View>
+  );
+}
+
+function TabBarLabel({ focused, color, children }: { focused: boolean; color: string; children: string }) {
+  return (
+    <Text
+      numberOfLines={1}
+      style={[
+        styles.tabLabel,
+        { color, fontFamily: focused ? fontFamilies.semibold : fontFamilies.medium },
+      ]}
+    >
+      {children}
+    </Text>
+  );
+}
+
+function TabBarButton(props: BottomTabBarButtonProps) {
+  return (
+    <PlatformPressable
+      {...props}
+      pressOpacity={0.55}
+      hoverEffect={{ color: '#000000', hoverOpacity: 0.05, activeOpacity: 0.1 }}
+      style={[props.style, styles.tabButton]}
+    />
+  );
 }
 
 function MainTabs() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+  const bottomInset = Math.max(insets.bottom, 8);
 
   return (
     <Tabs.Navigator
@@ -161,30 +195,24 @@ function MainTabs() {
         headerShown: false,
         tabBarActiveTintColor: theme.colors.primary,
         tabBarInactiveTintColor: theme.colors.onSurfaceVariant,
-        // The tab bar needs an explicit height budget: icon (24) + gap (2) +
-        // label (~14) + paddings. Without it, the bar's fixed default height
-        // gives the label zero room and it collapses to invisible — the DOM
-        // still contains it, so it looks correct in a snapshot but not on
-        // screen.
+        // Fixed budget: pill (30) + gap (4) + label (~15) + vertical padding.
+        // Without an explicit height the default bar clips the label.
         tabBarStyle: {
-          height: 86 + Math.max(insets.bottom, 7),
-          borderTopColor: theme.colors.outlineVariant,
-          paddingTop: 7,
-          paddingBottom: Math.max(insets.bottom, 7),
+          height: 62 + bottomInset,
+          borderTopWidth: StyleSheet.hairlineWidth,
+          borderTopColor: theme.dark ? theme.colors.outline : 'rgba(27, 32, 35, 0.12)',
+          paddingTop: 6,
+          paddingBottom: bottomInset,
           ...(Platform.OS === 'web'
             ? {
-                backgroundColor: theme.dark ? 'rgba(33, 35, 33, 0.92)' : 'rgba(255, 255, 255, 0.92)',
-                backdropFilter: 'blur(20px) saturate(180%)',
+                backgroundColor: theme.dark ? 'rgba(33, 36, 39, 0.9)' : 'rgba(255, 255, 255, 0.88)',
+                backdropFilter: 'blur(18px) saturate(180%)',
               }
             : { backgroundColor: theme.colors.surface }),
         },
-        tabBarLabelStyle: {
-          fontSize: 10.5,
-          fontWeight: '600',
-          letterSpacing: 0.3,
-          fontFamily: fontFamilies.medium,
-        },
-        tabBarIcon: (props) => <TabIcon {...props} route={route} />,
+        tabBarIcon: (props) => <TabBarIcon {...props} route={route} />,
+        tabBarLabel: (props) => <TabBarLabel {...props} />,
+        tabBarButton: (props) => <TabBarButton {...props} />,
       })}
     >
       <Tabs.Screen name="HomeTab" component={HomeStackNavigator} options={{ title: 'Home' }} />
@@ -195,6 +223,27 @@ function MainTabs() {
     </Tabs.Navigator>
   );
 }
+
+const styles = StyleSheet.create({
+  iconPill: {
+    width: 54,
+    height: 30,
+    borderRadius: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'transparent',
+  },
+  tabLabel: {
+    fontSize: 10.5,
+    letterSpacing: 0.2,
+    marginTop: 3,
+    textAlign: 'center',
+  },
+  tabButton: {
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+});
 
 export function RootNavigator() {
   const paper = useTheme();

@@ -28,17 +28,22 @@ function headerLabel(monthStart: string) {
 }
 
 /** One month-summary dot: a tiny day cell (I, II, III or all logged). */
-function MonthDot({ label, filled, filledColor, emptyColor, textColor }: {
+function MonthDot({ label, filled, filledColor, emptyColor, textColor, accessibilityLabel }: {
   label: string;
   filled: boolean;
   filledColor: string;
   emptyColor: string;
   textColor: string;
+  accessibilityLabel?: string;
 }) {
   return (
-    <View style={styles.monthDotCell}>
-      <View style={[styles.monthDot, { backgroundColor: filled ? filledColor : emptyColor }]} />
-      <Text style={[styles.monthDotText, { color: textColor }]}>{label}</Text>
+    <View style={styles.monthDotCell} accessibilityLabel={accessibilityLabel} accessibilityRole="text">
+      <View
+        style={[styles.monthDot, { backgroundColor: filled ? filledColor : emptyColor }]}
+        accessibilityElementsHidden
+        importantForAccessibility="no"
+      />
+      <Text style={[styles.monthDotText, { color: textColor }]} importantForAccessibility="no">{label}</Text>
     </View>
   );
 }
@@ -115,6 +120,7 @@ export default function DiaryScreen({ navigation }: Props) {
             filledColor={theme.colors.primary}
             emptyColor={theme.colors.outlineVariant}
             textColor={onSurface}
+            accessibilityLabel={`${r.label}: ${r.n}`}
           />
         ))}
       </View>
@@ -201,8 +207,11 @@ export default function DiaryScreen({ navigation }: Props) {
           textDayHeaderFontFamily: fontFamilies.medium,
         }}
         firstDay={1}
+        // Accessibility: the library ships its own a11y labels; keep the
+        // container identifiable for screen readers without hiding days.
+        accessibilityLabel="Calendar of logged days"
       />
-      <Text style={[styles.hint, { color: theme.colors.onSurfaceVariant }]}>
+      <Text style={[styles.hint, { color: theme.colors.onSurfaceVariant }]} accessibilityRole="text">
         Dots mark days with entries. Tap a day to see it.
       </Text>
       <RecentDays onOpen={(date) => navigation.navigate('DayDetail', { date })} />

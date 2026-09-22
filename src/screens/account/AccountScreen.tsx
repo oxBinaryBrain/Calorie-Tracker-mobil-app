@@ -79,6 +79,7 @@ export default function AccountScreen({ navigation }: Props) {
             iconColor={theme.colors.onPrimaryContainer}
             onPress={() => navigation.navigate('Settings')}
             accessibilityLabel="Settings"
+            accessibilityRole="button"
           />
         </Card.Content>
       </Card>
@@ -99,7 +100,13 @@ export default function AccountScreen({ navigation }: Props) {
         </Card.Content>
       </Card>
 
-      <Pressable style={styles.signOut} onPress={signOut} hitSlop={8}>
+      <Pressable
+        style={styles.signOut}
+        onPress={signOut}
+        hitSlop={8}
+        accessibilityRole="button"
+        accessibilityLabel="Sign out"
+      >
         <MaterialCommunityIcons name="logout" size={18} color={theme.colors.onSurfaceVariant} />
         <Text style={[styles.signOutText, { color: theme.colors.onSurfaceVariant }]}> Sign out</Text>
       </Pressable>

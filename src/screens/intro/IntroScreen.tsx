@@ -1,6 +1,5 @@
 import * as React from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { ActivityIndicator, Image, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Animated, Easing } from 'react-native';
 import { useTheme } from 'react-native-paper';
@@ -79,7 +78,7 @@ export default function IntroScreen({ onDone: rawOnDone }: { onDone: () => void 
             { backgroundColor: theme.colors.primaryContainer, opacity: logoOpacity, transform: [{ scale: logoScale }] },
           ]}
         >
-          <MaterialCommunityIcons name="leaf" size={44} color={theme.colors.onPrimaryContainer} />
+          <Image source={require('../../../assets/logo-mark.png')} style={styles.logoMark} resizeMode="contain" />
         </Animated.View>
         <Animated.Text
           style={[
@@ -117,6 +116,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   leaf: { fontSize: 44 },
+  logoMark: { width: 56, height: 56 },
   title: { fontSize: 30, letterSpacing: 0.5, fontFamily: fontFamilies.semibold },
   line: { height: 3, borderRadius: 2, marginTop: 2 },
   tagline: { fontSize: 14.5, fontFamily: fontFamilies.regular },

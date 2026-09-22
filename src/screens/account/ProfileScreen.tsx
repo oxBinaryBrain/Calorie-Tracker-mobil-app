@@ -114,6 +114,9 @@ export default function ProfileScreen({ navigation }: NativeStackScreenProps<Acc
           <Pressable
             key={a}
             onPress={() => setAvatarValue(a)}
+            accessibilityRole="radio"
+            accessibilityState={{ selected: a === avatarValue }}
+            accessibilityLabel={`Avatar ${a}`}
             style={[
               styles.avatarOption,
               { backgroundColor: theme.colors.surfaceVariant, borderColor: theme.colors.outlineVariant },
@@ -130,7 +133,14 @@ export default function ProfileScreen({ navigation }: NativeStackScreenProps<Acc
         control={control}
         name="displayName"
         render={({ field: { onChange, value } }) => (
-          <TextInput label="Display name (optional)" mode="outlined" value={value} onChangeText={onChange} placeholder="e.g. Riley" />
+          <TextInput
+            label="Display name (optional)"
+            mode="outlined"
+            value={value}
+            onChangeText={onChange}
+            placeholder="e.g. Riley"
+            accessibilityLabel="Display name, optional"
+          />
         )}
       />
 
@@ -144,6 +154,7 @@ export default function ProfileScreen({ navigation }: NativeStackScreenProps<Acc
             value={value != null ? String(value) : ''}
             onChangeText={(t) => onChange(t === '' ? undefined : Number(t.replace(',', '.')))}
             style={styles.field}
+            accessibilityLabel="Height in centimeters"
           />
         )} />
         <Controller control={control} name="weightKg" render={({ field: { onChange, value } }) => (
@@ -154,6 +165,7 @@ export default function ProfileScreen({ navigation }: NativeStackScreenProps<Acc
             value={value != null ? String(value) : ''}
             onChangeText={(t) => onChange(t === '' ? undefined : Number(t.replace(',', '.')))}
             style={styles.field}
+            accessibilityLabel="Weight in kilograms"
           />
         )} />
       </View>
@@ -166,6 +178,7 @@ export default function ProfileScreen({ navigation }: NativeStackScreenProps<Acc
             value={value != null ? String(value) : ''}
             onChangeText={(t) => onChange(t === '' ? undefined : Number(t.replace(',', '.')))}
             style={styles.field}
+            accessibilityLabel="Age in years"
           />
         )} />
         <Controller control={control} name="targetWeightKg" render={({ field: { onChange, value } }) => (
@@ -176,6 +189,7 @@ export default function ProfileScreen({ navigation }: NativeStackScreenProps<Acc
             value={value != null ? String(value) : ''}
             onChangeText={(t) => onChange(t === '' ? undefined : Number(t.replace(',', '.')))}
             style={styles.field}
+            accessibilityLabel="Target weight in kilograms, optional"
           />
         )} />
       </View>

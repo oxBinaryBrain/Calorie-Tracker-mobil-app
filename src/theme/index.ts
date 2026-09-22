@@ -202,6 +202,13 @@ export function semantic(theme: MD3Theme) {
     macroFat: palette.fat,
     chartGrid: dark ? palette.darkBorder : palette.gray200,
     mutedText: dark ? palette.gray400 : palette.gray600,
+    calorieTint: dark ? '#232E36' : palette.blue50,
+    proteinTint: dark ? 'rgba(169, 139, 196, 0.18)' : '#EADFF2',
+    carbsTint: dark ? 'rgba(127, 168, 201, 0.18)' : '#DCE9F5',
+    fatTint: dark ? 'rgba(217, 166, 98, 0.20)' : '#F5E2BE',
+    waterTint: dark ? 'rgba(94, 147, 181, 0.22)' : '#E7F2F9',
+    mealTint: dark ? 'rgba(217, 166, 98, 0.20)' : '#FAF0DC',
+    workoutTint: dark ? 'rgba(147, 198, 165, 0.18)' : palette.green100,
   };
 }
 

@@ -1,6 +1,12 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
+/** Title used by the daily reminder; also the cancel key for scheduled copies. */
+export const REMINDER_TITLE = 'Caloria';
+export const REMINDER_BODY = 'A minute to log what you ate today.';
+/** Older title, cancelled on schedule so upgrades drop stale copies. */
+const LEGACY_REMINDER_TITLE = 'A moment to note';
+
 export async function ensureNotificationPermission(): Promise<boolean> {
   const cur = await Notifications.getPermissionsAsync();
   if (cur.granted) return true;
@@ -13,9 +19,10 @@ async function ensureAndroidChannel(): Promise<void> {
   if (Platform.OS !== 'android') return;
   await Notifications.setNotificationChannelAsync('reminders', {
     name: 'Logging reminders',
-    importance: Notifications.AndroidImportance.LOW, // calm: no heads-up banners
-    sound: undefined,
-    vibrationPattern: undefined,
+    importance: Notifications.AndroidImportance.DEFAULT,
+    sound: 'default',
+    vibrationPattern: [0, 250, 250, 250],
+    lightColor: '#4E9468',
     lockscreenVisibility: Notifications.AndroidNotificationVisibility.PRIVATE,
   });
 }
@@ -26,8 +33,9 @@ export async function scheduleDailyReminder(hour: number, minute = 0): Promise<s
     await ensureAndroidChannel();
     const id = await Notifications.scheduleNotificationAsync({
       content: {
-        title: 'A moment to note',
-        body: 'Whenever you have a minute, add what you ate today.',
+        title: REMINDER_TITLE,
+        body: REMINDER_BODY,
+        sound: 'default',
       },
       trigger: {
         type: Notifications.SchedulableTriggerInputTypes.DAILY,
@@ -46,7 +54,8 @@ export async function cancelDailyReminder(): Promise<void> {
   try {
     const all = await Notifications.getAllScheduledNotificationsAsync();
     for (const n of all) {
-      if (n.content.title === 'A moment to note') {
+      const title = n.content.title;
+      if (title === REMINDER_TITLE || title === LEGACY_REMINDER_TITLE) {
         await Notifications.cancelScheduledNotificationAsync(n.identifier);
       }
     }
@@ -55,7 +64,7 @@ export async function cancelDailyReminder(): Promise<void> {
   }
 }
 
-// Present alerts while app is foregrounded so the reminder feels gentle.
+// Present alerts while app is foregrounded so the reminder is not dropped.
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowBanner: true,

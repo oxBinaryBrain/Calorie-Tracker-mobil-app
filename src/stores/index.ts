@@ -10,6 +10,8 @@ type PrefsState = {
   calendarMonth: string | null;
   reminderEnabled: boolean;
   reminderHour: number;
+  /** User-set daily water goal (ml). null = derive from profile weight/activity. */
+  waterGoalMl: number | null;
   simulatedPro: boolean;
   hydrated: boolean;
   setUnits: (u: Units) => void;
@@ -17,6 +19,7 @@ type PrefsState = {
   /** Remembers the diary calendar's visible month; null resets to today's month. */
   setCalendarMonth: (month: string | null) => void;
   setReminder: (enabled: boolean, hour?: number) => Promise<void>;
+  setWaterGoal: (ml: number | null) => void;
   setSimulatedPro: (pro: boolean) => void;
   hydrate: () => void;
 };
@@ -33,7 +36,7 @@ const DEV_FULL_ACCESS = true;
 /**
  * Preferences persist through the shared storage abstraction as one JSON blob.
  */
-async function persist(state: Pick<PrefsState, 'units' | 'theme' | 'calendarMonth' | 'reminderEnabled' | 'reminderHour' | 'simulatedPro'>) {
+async function persist(state: Pick<PrefsState, 'units' | 'theme' | 'calendarMonth' | 'reminderEnabled' | 'reminderHour' | 'waterGoalMl' | 'simulatedPro'>) {
   try {
     await storageSet(STORAGE_KEY, JSON.stringify(state));
   } catch {
@@ -47,6 +50,7 @@ export const usePrefs = create<PrefsState>((set, get) => ({
   calendarMonth: null,
   reminderEnabled: false,
   reminderHour: 20,
+  waterGoalMl: null,
   simulatedPro: DEV_FULL_ACCESS,
   hydrated: false,
   setUnits: (units) => {
@@ -73,6 +77,10 @@ export const usePrefs = create<PrefsState>((set, get) => ({
     }
     void persist(get());
   },
+  setWaterGoal: (waterGoalMl) => {
+    set({ waterGoalMl });
+    void persist(get());
+  },
   setSimulatedPro: (simulatedPro) => {
     set({ simulatedPro });
     void persist(get());
@@ -91,6 +99,7 @@ export const usePrefs = create<PrefsState>((set, get) => ({
             calendarMonth: typeof parsed.calendarMonth === 'string' ? parsed.calendarMonth : null,
             reminderEnabled: parsed.reminderEnabled ?? false,
             reminderHour: parsed.reminderHour ?? 20,
+            waterGoalMl: typeof parsed.waterGoalMl === 'number' && parsed.waterGoalMl > 0 ? parsed.waterGoalMl : null,
             simulatedPro: DEV_FULL_ACCESS ? true : (parsed.simulatedPro ?? false),
           });
         }

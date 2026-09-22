@@ -67,3 +67,16 @@ export function waterGoalMl(weightKg?: number, activityLevel?: ActivityLevel): n
   const extra = activityLevel ? ACTIVITY_WATER_ML[activityLevel] : 250;
   return Math.round(Math.min(4000, Math.max(1500, base + extra)) / 50) * 50;
 }
+
+/**
+ * Water goal actually shown in the UI: a user-set value from prefs when
+ * present (rounded to 50 ml), otherwise the profile-derived default.
+ */
+export function effectiveWaterGoalMl(
+  customMl: number | null | undefined,
+  weightKg?: number,
+  activityLevel?: ActivityLevel,
+): number {
+  if (customMl != null && customMl > 0) return Math.round(customMl / 50) * 50;
+  return waterGoalMl(weightKg, activityLevel);
+}

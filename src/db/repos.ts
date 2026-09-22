@@ -208,20 +208,25 @@ export class SqliteTrackerRepo implements TrackerRepo {
 
   async upsert(tracker: DayTracker): Promise<DayTracker> {
     const database = await db();
+    // Merge with the stored row first: water quick-adds only send
+    // { date, waterMl }, and writing those through untouched would null out
+    // a saved weight or sleep.
+    const existing = await this.get(tracker.date);
+    const merged: DayTracker = { ...existing, ...tracker, date: tracker.date };
     await database.runAsync(
       `INSERT INTO day_trackers (date, water_ml, weight_kg, sleep_hours, sleep_quality)
        VALUES (?, ?, ?, ?, ?)
        ON CONFLICT(date) DO UPDATE SET water_ml = excluded.water_ml, weight_kg = excluded.weight_kg,
          sleep_hours = excluded.sleep_hours, sleep_quality = excluded.sleep_quality`,
       [
-        tracker.date,
-        tracker.waterMl,
-        tracker.weightKg ?? null,
-        tracker.sleepHours ?? null,
-        tracker.sleepQuality ?? null,
+        merged.date,
+        merged.waterMl,
+        merged.weightKg ?? null,
+        merged.sleepHours ?? null,
+        merged.sleepQuality ?? null,
       ],
     );
-    return tracker;
+    return merged;
   }
 }
 

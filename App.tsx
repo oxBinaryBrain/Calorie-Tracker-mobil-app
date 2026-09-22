@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Platform, StatusBar, StyleSheet, Text, View, useColorScheme } from 'react-native';
+import { Platform, StatusBar, StyleSheet, Image, Text, View, useColorScheme } from 'react-native';
 import * as SplashScreen from 'expo-splash-screen';
 import { PaperProvider } from 'react-native-paper';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -8,6 +8,7 @@ import { useFonts } from 'expo-font';
 
 import { RootNavigator } from './src/navigation';
 import { ToastHost } from './src/components/ui';
+import { ErrorBoundary } from './src/components/ErrorBoundary';
 import { darkTheme, lightTheme, fontFamilies } from './src/theme';
 import { usePrefs, useSession } from './src/stores';
 import { initPurchases } from './src/services/purchases';
@@ -61,7 +62,7 @@ export default function App() {
   if (!fontsLoaded) {
     return Platform.OS === 'web' ? (
       <View style={[styles.webSplash, { backgroundColor: '#F6F7F5' }]}>
-        <Text style={styles.webSplashMark}>🌿</Text>
+        <Image source={require('./assets/logo-mark.png')} style={styles.webSplashMark} resizeMode="contain" />
         <Text style={styles.webSplashName}>Caloria</Text>
       </View>
     ) : null;
@@ -92,7 +93,9 @@ export default function App() {
         <QueryClientProvider client={queryClient}>
           <PaperProvider theme={paperTheme}>
             <StatusBar barStyle={paperTheme.dark ? 'light-content' : 'dark-content'} />
-            <RootNavigator />
+            <ErrorBoundary>
+              <RootNavigator />
+            </ErrorBoundary>
             <ToastHost />
           </PaperProvider>
         </QueryClientProvider>
@@ -103,6 +106,6 @@ export default function App() {
 
 const styles = StyleSheet.create({
   webSplash: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10 },
-  webSplashMark: { fontSize: 44 },
+  webSplashMark: { width: 64, height: 64 },
   webSplashName: { fontSize: 22, letterSpacing: 0.5, color: '#1B2023', fontWeight: '600' },
 });

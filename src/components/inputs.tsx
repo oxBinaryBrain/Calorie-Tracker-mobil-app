@@ -20,7 +20,7 @@ export function ChoiceGroup<T extends string>({
 }) {
   const theme = useTheme();
   return (
-    <View style={styles.group}>
+    <View style={styles.group} accessibilityRole="radiogroup" accessibilityLabel={label}>
       <Text style={[styles.label, { color: theme.colors.onSurfaceVariant }]}>{label}</Text>
       <View style={[styles.rowWrap, { maxWidth: columns * 130 }]}>
         {options.map((opt) => {
@@ -32,6 +32,9 @@ export function ChoiceGroup<T extends string>({
               onPress={() => onChange(opt.value)}
               style={[styles.choice, selected && { backgroundColor: theme.colors.primaryContainer }]}
               textStyle={{ color: selected ? theme.colors.onPrimaryContainer : theme.colors.onSurface }}
+              accessibilityRole="radio"
+              accessibilityState={{ selected }}
+              accessibilityLabel={opt.label}
             >
               {opt.label}
             </Chip>
@@ -77,6 +80,7 @@ export function NumberField({
       mode="outlined"
       placeholder={placeholder}
       autoFocus={autoFocus}
+      accessibilityLabel={suffix ? `${label} in ${suffix}` : label}
     />
   );
 }
@@ -96,6 +100,7 @@ export function PrimaryButton({ loading, disabled, onPress, children, style }: {
       disabled={disabled || loading}
       style={[styles.button, style]}
       contentStyle={styles.buttonContent}
+      accessibilityRole="button"
     >
       {children}
     </Button>
@@ -104,7 +109,11 @@ export function PrimaryButton({ loading, disabled, onPress, children, style }: {
 
 export function FormError({ message }: { message?: string }) {
   if (!message) return null;
-  return <HelperText type="info" visible style={styles.error}>{message}</HelperText>;
+  return (
+    <HelperText type="info" visible style={styles.error} accessibilityLiveRegion="polite">
+      {message}
+    </HelperText>
+  );
 }
 
 const styles = StyleSheet.create({

@@ -8,8 +8,9 @@ import type { TrackersTabParams } from '../../navigation/types';
 import type { SleepQuality } from '../../types';
 import { useDayTracker, useTrackerRange, useUpsertTracker, useProfile } from '../../hooks/queries';
 import { addDays, dateKey, formatMl } from '../../utils';
-import { waterGoalMl } from '../../services/targets';
+import { effectiveWaterGoalMl } from '../../services/targets';
 import { tickLight } from '../../services/haptics';
+import { usePrefs } from '../../stores';
 import { LargeTitleScreen, QuickChip } from '../../components/ui';
 
 type Props = NativeStackScreenProps<TrackersTabParams, 'Trackers'>;
@@ -33,7 +34,8 @@ export default function TrackersScreen({ navigation }: Props) {
   const tracker = useDayTracker(today);
   const upsert = useUpsertTracker();
   const profile = useProfile();
-  const goalMl = waterGoalMl(profile.data?.weightKg, profile.data?.activityLevel);
+  const waterGoalPref = usePrefs((s) => s.waterGoalMl);
+  const goalMl = effectiveWaterGoalMl(waterGoalPref, profile.data?.weightKg, profile.data?.activityLevel);
   const { from, to } = monthBounds(today);
   const month = useTrackerRange(from, to);
   const t = tracker.data;
@@ -97,7 +99,7 @@ export default function TrackersScreen({ navigation }: Props) {
       refreshing={refreshing}
       onRefresh={() => void onRefresh()}
     >
-      <Text style={[styles.intro, { color: theme.colors.onSurfaceVariant }]}>
+      <Text style={[styles.intro, { color: theme.colors.onSurfaceVariant }]} accessibilityRole="text">
         Gentle trackers for the day. Everything is optional.
       </Text>
 
@@ -121,7 +123,11 @@ export default function TrackersScreen({ navigation }: Props) {
             </View>
             <Text style={[styles.chevron, { color: theme.colors.onSurfaceVariant }]}>›</Text>
           </View>
-          <View style={[styles.progressTrack, { backgroundColor: theme.colors.surfaceVariant }]}>
+          <View
+            style={[styles.progressTrack, { backgroundColor: theme.colors.surfaceVariant }]}
+            accessibilityRole="progressbar"
+            accessibilityValue={{ min: 0, max: 100, now: waterPct, text: `${waterPct} percent of daily water goal` }}
+          >
             <View style={[styles.progressFill, { width: `${waterPct}%`, backgroundColor: theme.colors.primary }]} />
           </View>
           <View style={styles.chipRow}>

@@ -102,6 +102,13 @@ export function useUpsertTracker() {
       void qc.invalidateQueries({ queryKey: queryKeys.tracker(t.date) });
       void qc.invalidateQueries({ queryKey: ['trackers'] });
     },
+    onError: () => {
+      // Lazy import: a static import would drag expo modules into unit tests.
+      void import('../stores').then(
+        (m) => m.useToasts.getState().show('Could not save that — try again'),
+        () => undefined,
+      );
+    },
   });
 }
 

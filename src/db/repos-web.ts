@@ -100,10 +100,13 @@ export class AsyncStorageTrackerRepo implements TrackerRepo {
   async upsert(tracker: DayTracker): Promise<DayTracker> {
     const all = await readJson<DayTracker[]>(KEYS.trackers, []);
     const idx = all.findIndex((t) => t.date === tracker.date);
-    if (idx === -1) all.push(tracker);
-    else all[idx] = tracker;
+    // Merge, don't replace: water quick-adds only send { date, waterMl },
+    // and a blind replace would wipe a saved weight or sleep.
+    const merged: DayTracker = idx === -1 ? tracker : { ...all[idx], ...tracker, date: tracker.date };
+    if (idx === -1) all.push(merged);
+    else all[idx] = merged;
     await writeJson(KEYS.trackers, all);
-    return tracker;
+    return merged;
   }
 }
 

@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { KeyboardAvoidingView, Platform, StyleSheet, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Image, Platform, StyleSheet, Text, View } from 'react-native';
 import { Controller, useForm } from 'react-hook-form';
 import { Button, Text as PaperText, TextInput, useTheme } from 'react-native-paper';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -25,7 +25,7 @@ function AuthShell({ children, title, subtitle, back }: {
         {back ? <AppHeader onBack={back} hairline={false} /> : null}
         <View style={styles.hero}>
           <View style={[styles.logo, { backgroundColor: theme.colors.primaryContainer }]}>
-            <PaperText style={{ color: theme.colors.onPrimaryContainer, fontSize: 30, fontWeight: '700' }}>C</PaperText>
+            <Image source={require('../../../assets/logo-mark.png')} style={styles.logoMark} resizeMode="contain" />
           </View>
           <Text style={[styles.title, { color: theme.colors.onBackground }]}>{title}</Text>
           <Text style={[styles.subtitle, { color: theme.colors.onSurfaceVariant }]}>{subtitle}</Text>
@@ -249,6 +249,7 @@ const styles = StyleSheet.create({
   inner: { flex: 1, justifyContent: 'center', padding: 24, gap: 10 },
   hero: { alignItems: 'center', marginBottom: 24, gap: 6 },
   logo: { width: 64, height: 64, borderRadius: 18, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
+  logoMark: { width: 40, height: 40 },
   title: { fontSize: 26, fontWeight: '700' },
   subtitle: { fontSize: 14, textAlign: 'center' },
   switchRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 8 },
