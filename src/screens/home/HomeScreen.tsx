@@ -77,6 +77,22 @@ export default function HomeScreen({ navigation }: Props) {
 
   const todayFood = (entries.data ?? []).filter((e) => e.type === 'food');
   const firstName = (p?.displayName || '').split(' ')[0];
+  const goalMl = effectiveWaterGoalMl(waterGoalPref, p?.weightKg, p?.activityLevel);
+
+  const remainingKcal = targetKcal - totals.calories;
+  const dayStrip: Array<{ icon: string; text: string }> = [
+    { icon: 'silverware-fork-knife', text: `${todayFood.length} ${todayFood.length === 1 ? 'meal' : 'meals'}` },
+    {
+      icon: 'target',
+      text:
+        targetKcal > 0
+          ? remainingKcal >= 0
+            ? `${formatKcal(remainingKcal)} left`
+            : `${formatKcal(-remainingKcal)} over`
+          : `${formatKcal(totals.calories)} in`,
+    },
+    { icon: 'water-outline', text: `${formatMl(waterToday)} / ${formatMl(goalMl)}` },
+  ];
 
   return (
     <SafeAreaView style={[styles.flex, { backgroundColor: theme.colors.background }]} edges={['top']}>
@@ -112,6 +128,33 @@ export default function HomeScreen({ navigation }: Props) {
             >
               <MaterialCommunityIcons name="bell-outline" size={20} color={theme.colors.onSurface} />
             </View>
+          </View>
+
+          <View
+            style={styles.dayStrip}
+            accessibilityRole="text"
+            accessibilityLabel={`Today: ${dayStrip.map((d) => d.text).join(', ')}`}
+          >
+            {dayStrip.map((d, i) => (
+              <View
+                key={d.icon}
+                style={[
+                  styles.dayItem,
+                  i > 0 && { borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: theme.colors.outlineVariant, paddingLeft: 10 },
+                ]}
+              >
+                <MaterialCommunityIcons
+                  name={d.icon as any}
+                  size={14}
+                  color={theme.colors.onSurfaceVariant}
+                  accessibilityElementsHidden
+                  importantForAccessibility="no"
+                />
+                <Text numberOfLines={1} style={[styles.dayItemText, { color: theme.colors.onSurfaceVariant }]}>
+                  {d.text}
+                </Text>
+              </View>
+            ))}
           </View>
 
           <View style={[styles.ringRow, { backgroundColor: s.calorieTint }]}>
@@ -198,7 +241,7 @@ export default function HomeScreen({ navigation }: Props) {
 
           <WaterQuickAdd
             loggedMl={waterToday}
-            goalMl={effectiveWaterGoalMl(waterGoalPref, p?.weightKg, p?.activityLevel)}
+            goalMl={goalMl}
             onAdd={(ml) => upsertTracker.mutate({ date: today, waterMl: Math.max(0, waterToday + ml) })}
           />
 
@@ -244,7 +287,10 @@ export default function HomeScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  header: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingTop: 10 },
+  header: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingTop: 14 },
+  dayStrip: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, marginTop: 14, gap: 10 },
+  dayItem: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 6 },
+  dayItemText: { fontSize: 12.5, fontFamily: fontFamilies.regular },
   avatar: { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center' },
   headerText: { flex: 1 },
   bellChip: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
@@ -253,7 +299,7 @@ const styles = StyleSheet.create({
   ringRow: {
     alignSelf: 'stretch',
     marginHorizontal: 16,
-    marginTop: 12,
+    marginTop: 14,
     borderRadius: 22,
     flexDirection: 'row',
     alignItems: 'center',
