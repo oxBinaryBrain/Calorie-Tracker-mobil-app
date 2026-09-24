@@ -209,6 +209,11 @@ export function semantic(theme: MD3Theme) {
     waterTint: dark ? 'rgba(94, 147, 181, 0.22)' : '#E7F2F9',
     mealTint: dark ? 'rgba(217, 166, 98, 0.20)' : '#FAF0DC',
     workoutTint: dark ? 'rgba(147, 198, 165, 0.18)' : palette.green100,
+    // Body trackers. Weight stays neutral on purpose: it is a measurement,
+    // not a goal to push. Sleep borrows the tertiary green but as a tint,
+    // never as the solid tertiaryContainer fill it used to render as.
+    weightTint: dark ? 'rgba(154, 165, 171, 0.16)' : '#EDEFF1',
+    sleepTint: dark ? 'rgba(147, 198, 165, 0.18)' : palette.green100,
   };
 }
 

@@ -62,6 +62,18 @@ export function formatDuration(minutes: number): string {
   return m === 0 ? `${h} h` : `${h} h ${m} min`;
 }
 
+export type MealSlot = 'breakfast' | 'lunch' | 'snack' | 'dinner';
+
+/** Which meal a time-of-day falls in. 23:00–04:59 counts as a snack. */
+export function mealSlot(loggedAt: string): MealSlot {
+  const h = new Date(loggedAt).getHours();
+  if (h >= 5 && h < 11) return 'breakfast';
+  if (h >= 11 && h < 15) return 'lunch';
+  if (h >= 15 && h < 18) return 'snack';
+  if (h >= 18 && h < 23) return 'dinner';
+  return 'snack';
+}
+
 export function greeting(d: Date = new Date()): string {
   const h = d.getHours();
   if (h < 5) return 'Late night';

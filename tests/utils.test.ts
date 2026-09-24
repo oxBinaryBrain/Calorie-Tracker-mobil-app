@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { addDays, clamp, dateFromKey, dateKey, formatDuration, formatGrams, formatKcal, formatMl, greeting, monthKeyOf, toNum } from '../src/utils';
+import { addDays, clamp, dateFromKey, dateKey, formatDuration, formatGrams, formatKcal, formatMl, greeting, mealSlot, monthKeyOf, toNum } from '../src/utils';
 
 describe('dateKey / dateFromKey', () => {
   it('formats local time as YYYY-MM-DD with zero padding', () => {
@@ -133,5 +133,22 @@ describe('greeting', () => {
     expect(greeting(at(17))).toBe('Good afternoon');
     expect(greeting(at(18))).toBe('Good evening');
     expect(greeting(at(23))).toBe('Good evening');
+  });
+});
+
+describe('mealSlot', () => {
+  const at = (hour: number) => new Date(2026, 8, 22, hour, 0, 0).toISOString();
+
+  it('picks the meal for each time-of-day band', () => {
+    expect(mealSlot(at(4))).toBe('snack');
+    expect(mealSlot(at(5))).toBe('breakfast');
+    expect(mealSlot(at(10))).toBe('breakfast');
+    expect(mealSlot(at(11))).toBe('lunch');
+    expect(mealSlot(at(14))).toBe('lunch');
+    expect(mealSlot(at(15))).toBe('snack');
+    expect(mealSlot(at(17))).toBe('snack');
+    expect(mealSlot(at(18))).toBe('dinner');
+    expect(mealSlot(at(22))).toBe('dinner');
+    expect(mealSlot(at(23))).toBe('snack');
   });
 });

@@ -1,8 +1,6 @@
 import * as React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import type { StyleProp, ViewStyle } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { useTheme } from 'react-native-paper';
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import Svg, { Circle, G } from 'react-native-svg';
 import { semantic } from '../../theme';
 import { formatKcal } from '../../utils';
@@ -85,9 +83,9 @@ export function MacroBars({ carbs, protein, fat, targets }: {
   const theme = useTheme();
   const s = semantic(theme);
   const rows = [
-    { label: 'Carbs', value: carbs, target: targets.carbsGrams, color: s.macroCarbs },
-    { label: 'Protein', value: protein, target: targets.proteinGrams, color: s.macroProtein },
-    { label: 'Fat', value: fat, target: targets.fatGrams, color: s.macroFat },
+    { label: 'Carbs', value: carbs, target: targets.carbsGrams, color: s.macroCarbs, tint: s.carbsTint },
+    { label: 'Protein', value: protein, target: targets.proteinGrams, color: s.macroProtein, tint: s.proteinTint },
+    { label: 'Fat', value: fat, target: targets.fatGrams, color: s.macroFat, tint: s.fatTint },
   ];
   return (
     <View
@@ -101,8 +99,13 @@ export function MacroBars({ carbs, protein, fat, targets }: {
         const pct = Math.min(1, row.target > 0 ? row.value / row.target : 0);
         return (
           <View key={row.label} style={styles.macroRow}>
+            <View
+              style={[styles.macroDot, { backgroundColor: row.color }]}
+              accessibilityElementsHidden
+              importantForAccessibility="no"
+            />
             <Text style={[styles.macroLabel, { color: theme.colors.onSurfaceVariant }]}>{row.label}</Text>
-            <View style={[styles.macroTrack, { backgroundColor: s.ringTrack }]}>
+            <View style={[styles.macroTrack, { backgroundColor: row.tint }]}>
               <View style={[styles.macroFill, { backgroundColor: row.color, width: `${Math.round(pct * 100)}%` }]} />
             </View>
             <Text style={[styles.macroValue, { color: theme.colors.onSurface }]}>
@@ -112,77 +115,5 @@ export function MacroBars({ carbs, protein, fat, targets }: {
         );
       })}
     </View>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Macro ring tile — image-style mini progress ring with an icon center
-// ---------------------------------------------------------------------------
-
-export function MacroRingTile({ value, unit, progress, over, label, overLabel, color, icon, onPress, style }: {
-  /** Number shown on top: grams left, or grams over (positive). */
-  value: number;
-  unit: string;
-  /** 0..1 consumed fraction driving the ring. */
-  progress: number;
-  over: boolean;
-  label: string;
-  overLabel: string;
-  color: string;
-  icon: string;
-  onPress?: () => void;
-  style?: StyleProp<ViewStyle>;
-}) {
-  const theme = useTheme();
-  const s = semantic(theme);
-  const size = 62;
-  const stroke = 5;
-  const r = (size - stroke) / 2;
-  const c = 2 * Math.PI * r;
-  const pct = Math.max(0, Math.min(1, progress));
-  const a11yLabel = `${Math.round(value)} ${unit} ${over ? overLabel : label}`;
-  const Body = (
-    <>
-      <Text style={[styles.mrtValue, { color: theme.colors.onBackground }]}>
-        {Math.round(value)}
-        <Text style={{ color: theme.colors.onSurfaceVariant }}>{unit}</Text>
-      </Text>
-      <Text style={[styles.mrtLabel, { color: theme.colors.onSurfaceVariant }]}>{over ? overLabel : label}</Text>
-      <View style={{ width: size, height: size, marginTop: 10, alignItems: 'center', justifyContent: 'center' }}>
-        <Svg width={size} height={size} style={StyleSheet.absoluteFill}>
-          <G rotation="-90" origin={`${size / 2}, ${size / 2}`}>
-            <Circle cx={size / 2} cy={size / 2} r={r} stroke={s.ringTrack} strokeWidth={stroke} fill="none" />
-            <Circle
-              cx={size / 2} cy={size / 2} r={r}
-              stroke={color}
-              strokeWidth={stroke}
-              fill="none"
-              strokeLinecap="round"
-              strokeDasharray={`${c} ${c}`}
-              strokeDashoffset={c * (1 - pct)}
-            />
-          </G>
-        </Svg>
-        <MaterialCommunityIcons name={icon as any} size={17} color={over ? theme.colors.onSurfaceVariant : color} accessibilityElementsHidden importantForAccessibility="no" />
-
-      </View>
-    </>
-  );
-  const card = [
-    styles.mrtCard,
-    style,
-  ] as const;
-  if (!onPress) {
-    return <View style={[{ backgroundColor: theme.colors.surface }, ...card]} accessibilityLabel={a11yLabel} accessibilityRole="text">{Body}</View>;
-  }
-  return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={a11yLabel}
-      style={({ pressed }) => [{ backgroundColor: theme.colors.surface }, ...card, pressed && { opacity: 0.7 }]}
-    >
-      {Body}
-    </Pressable>
   );
 }

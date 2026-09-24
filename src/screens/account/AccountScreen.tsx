@@ -5,23 +5,68 @@ import { useQueryClient } from '@tanstack/react-query';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AccountTabParams } from '../../navigation/types';
+import type { ActivityLevel, Goal, Sex } from '../../types';
 import { useSession, usePrefs } from '../../stores';
 import { useProfile } from '../../hooks/queries';
+import { formatMl } from '../../utils';
+import { effectiveWaterGoalMl } from '../../services/targets';
+import { fontFamilies, semantic } from '../../theme';
 import { LargeTitleScreen, PressableRow, SectionTitle } from '../../components/ui';
 
 type Props = NativeStackScreenProps<AccountTabParams, 'Account'>;
 
+const ACTIVITY_LABELS: Record<ActivityLevel, string> = {
+  sedentary: 'Mostly sitting',
+  light: 'Light',
+  moderate: 'Moderate',
+  active: 'Active',
+  athlete: 'Athlete',
+};
+
+const GOAL_LABELS: Record<Goal, string> = {
+  lose: 'Lose',
+  maintain: 'Maintain',
+  gain: 'Gain',
+};
+
+const SEX_LABELS: Record<Sex, string> = {
+  female: 'Female',
+  male: 'Male',
+  other: 'Other',
+};
+
+/** Section heading with a trailing link to the screen that edits it. */
+function SectionHeaderRow({ title, onPress }: { title: string; onPress: () => void }) {
+  const theme = useTheme();
+  return (
+    <View style={styles.sectionRow}>
+      <SectionTitle text={title} style={styles.sectionRowTitle} />
+      <Pressable
+        onPress={onPress}
+        hitSlop={10}
+        accessibilityRole="button"
+        accessibilityLabel={`Edit ${title.toLowerCase()}`}
+      >
+        <Text style={[styles.sectionAction, { color: theme.colors.primary }]}>Edit</Text>
+      </Pressable>
+    </View>
+  );
+}
+
 export default function AccountScreen({ navigation }: Props) {
   const theme = useTheme();
+  const s = semantic(theme);
   const qc = useQueryClient();
-  const email = useSession((s) => s.email);
-  const signOut = useSession((s) => s.signOut);
-  const simulatedPro = usePrefs((s) => s.simulatedPro);
+  const email = useSession((st) => st.email);
+  const signOut = useSession((st) => st.signOut);
+  const simulatedPro = usePrefs((st) => st.simulatedPro);
+  const waterGoalPref = usePrefs((st) => st.waterGoalMl);
   const profile = useProfile();
   const p = profile.data;
   const firstName = (p?.displayName || '').split(' ')[0];
   const displayName = firstName || email?.split('@')[0] || 'Friend';
   const avatar = p?.avatarEmoji ?? '🌿';
+  const waterGoal = effectiveWaterGoalMl(waterGoalPref, p?.weightKg, p?.activityLevel);
   const [refreshing, setRefreshing] = React.useState(false);
 
   const onRefresh = React.useCallback(async () => {
@@ -38,6 +83,21 @@ export default function AccountScreen({ navigation }: Props) {
     [scrollY],
   );
 
+  // Everything below is read straight from the profile and the water goal —
+  // no derived "stats" that pretend to be measured.
+  const facts: Array<{ label: string; value: string }> = p
+    ? [
+        { label: 'Weight', value: `${p.weightKg} kg` },
+        { label: 'Height', value: `${p.heightCm} cm` },
+        { label: 'Age', value: `${p.age}` },
+        { label: 'Sex', value: SEX_LABELS[p.sex] },
+        { label: 'Activity', value: ACTIVITY_LABELS[p.activityLevel] },
+        { label: 'Goal', value: GOAL_LABELS[p.goal] },
+        { label: 'Target weight', value: p.targetWeightKg != null ? `${p.targetWeightKg} kg` : '—' },
+        { label: 'Water goal', value: formatMl(waterGoal) },
+      ]
+    : [];
+
   return (
     <LargeTitleScreen
       title="Account"
@@ -53,30 +113,24 @@ export default function AccountScreen({ navigation }: Props) {
         </Animated.View>
       }
     >
-      <Card mode="contained" style={[styles.heroCard, { backgroundColor: theme.colors.primaryContainer }]}>
+      <Card mode="contained" style={[styles.heroCard, { backgroundColor: s.calorieTint }]}>
         <Card.Content style={styles.heroRow}>
           <View style={[styles.avatar, { backgroundColor: theme.colors.surface }]}>
             <Text style={{ fontSize: 30 }}>{avatar}</Text>
           </View>
           <View style={styles.heroText}>
-            <Text style={[styles.name, { color: theme.colors.onPrimaryContainer }]}>{displayName}</Text>
-            <Text style={[styles.email, { color: theme.colors.onPrimaryContainer, opacity: 0.75 }]}>
-              {email ?? 'Signed in'}
-            </Text>
-            {!simulatedPro ? (
-              <Text style={[styles.planTag, { color: theme.colors.onPrimaryContainer, opacity: 0.9 }]}>
-                Free plan · Caloria Pro unlocks photo logging and weekly summaries
+            <Text style={[styles.name, { color: theme.colors.onSurface }]}>{displayName}</Text>
+            <Text style={[styles.email, { color: s.mutedText }]}>{email ?? 'Signed in'}</Text>
+            <View style={[styles.planPill, { borderColor: theme.colors.outlineVariant }]}>
+              <Text style={[styles.planPillText, { color: s.mutedText }]}>
+                {simulatedPro ? 'Caloria Pro' : 'Free plan'}
               </Text>
-            ) : (
-              <Text style={[styles.planTag, { color: theme.colors.onPrimaryContainer, opacity: 0.9 }]}>
-                Caloria Pro · everything unlocked
-              </Text>
-            )}
+            </View>
           </View>
           <IconButton
             icon="cog"
             size={24}
-            iconColor={theme.colors.onPrimaryContainer}
+            iconColor={theme.colors.onSurfaceVariant}
             onPress={() => navigation.navigate('Settings')}
             accessibilityLabel="Settings"
             accessibilityRole="button"
@@ -84,12 +138,33 @@ export default function AccountScreen({ navigation }: Props) {
         </Card.Content>
       </Card>
 
-      <SectionTitle text="Manage" style={{ marginTop: 14, marginBottom: 6 }} />
+      <SectionHeaderRow title="Your details" onPress={() => navigation.navigate('Profile')} />
+      {p ? (
+        <Card mode="contained" style={styles.card}>
+          <Card.Content style={styles.factGrid}>
+            {facts.map((fact) => (
+              <View key={fact.label} style={styles.fact}>
+                <Text style={[styles.factLabel, { color: theme.colors.onSurfaceVariant }]}>{fact.label}</Text>
+                <Text style={[styles.factValue, { color: theme.colors.onSurface }]}>{fact.value}</Text>
+              </View>
+            ))}
+          </Card.Content>
+        </Card>
+      ) : (
+        <Text style={[styles.note, { color: s.mutedText }]}>
+          Add your height, weight and goal so the daily numbers stay sensible.
+        </Text>
+      )}
+
+      <SectionTitle text="Manage" style={styles.sectionGap} />
       <Card mode="contained" style={styles.card}>
         <Card.Content style={styles.gap0}>
-          <PressableRow label="Profile" icon="account-outline" value={firstName || 'Set up'} onPress={() => navigation.navigate('Profile')} />
-          <PressableRow label="Goals & targets" icon="target" onPress={() => navigation.navigate('Goals')} />
-          <PressableRow label="Features" icon="star-outline" value="What's inside" onPress={() => navigation.navigate('Features')} />
+          <PressableRow
+            label="Features"
+            icon="star-outline"
+            value="What's inside"
+            onPress={() => navigation.navigate('Features')}
+          />
           <PressableRow
             label="Caloria Pro"
             icon="crown-outline"
@@ -120,12 +195,35 @@ const styles = StyleSheet.create({
   avatar: { width: 62, height: 62, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   miniAvatar: { width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
   miniAvatarText: { fontSize: 15 },
-  heroText: { flex: 1, gap: 1 },
-  name: { fontSize: 19, fontWeight: '700' },
-  email: { fontSize: 13 },
-  planTag: { fontSize: 11.5, marginTop: 2 },
+  heroText: { flex: 1, gap: 2 },
+  name: { fontSize: 19, fontFamily: fontFamilies.semibold },
+  email: { fontSize: 13, fontFamily: fontFamilies.regular },
+  planPill: {
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 1,
+    marginTop: 3,
+  },
+  planPillText: { fontSize: 11, fontFamily: fontFamilies.medium },
+  sectionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 16,
+    marginBottom: 6,
+  },
+  sectionRowTitle: { marginTop: 0 },
+  sectionAction: { fontSize: 13, fontFamily: fontFamilies.medium },
+  sectionGap: { marginTop: 16 },
   card: { borderRadius: 16 },
+  factGrid: { flexDirection: 'row', flexWrap: 'wrap', rowGap: 12 },
+  fact: { width: '50%' },
+  factLabel: { fontSize: 12, fontFamily: fontFamilies.medium },
+  factValue: { fontSize: 15, fontFamily: fontFamilies.semibold, marginTop: 1 },
+  note: { fontSize: 13.5, fontFamily: fontFamilies.regular, marginBottom: 4 },
   gap0: { paddingVertical: 2, paddingHorizontal: 16 },
   signOut: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 20, padding: 8 },
-  signOutText: { fontSize: 14.5 },
+  signOutText: { fontSize: 14.5, fontFamily: fontFamilies.regular },
 });

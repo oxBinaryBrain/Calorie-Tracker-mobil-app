@@ -11,7 +11,7 @@ import { useDayEntries, todayTotals, useTargets, useDayTracker, useUpsertTracker
 import { dateKey, formatKcal, formatMl, greeting } from '../../utils';
 import { fontFamilies, semantic } from '../../theme';
 import { effectiveWaterGoalMl } from '../../services/targets';
-import { CalorieRing, EntryList, MacroRingTile, EmptyState } from '../../components/ui';
+import { CalorieRing, EntryList, MacroBars, EmptyState } from '../../components/ui';
 import { usingMockApi } from '../../api/client';
 import { usePrefs } from '../../stores';
 import { WeekStrip } from './parts/WeekStrip';
@@ -157,67 +157,56 @@ export default function HomeScreen({ navigation }: Props) {
             ))}
           </View>
 
-          <View style={[styles.ringRow, { backgroundColor: s.calorieTint }]}>
-            <View style={styles.ringNumbers}>
-              <Text style={styles.ringBig}>
-                <Text style={{ color: theme.colors.onBackground }}>{formatKcal(totals.calories)}</Text>
-                <Text style={{ color: theme.colors.onSurfaceVariant }}> / {formatKcal(targetKcal || totals.calories || 2100)}</Text>
-              </Text>
-              <Text style={[styles.ringCaption, { color: theme.colors.onSurfaceVariant }]}>Today calories</Text>
-              {totals.burned > 0 ? (
-                <Text style={[styles.ringBurned, { color: theme.colors.onSurfaceVariant }]}>
-                  {formatKcal(totals.burned)} burned
+          <View style={[styles.hero, { backgroundColor: s.calorieTint }]}>
+            <View style={styles.heroNumbers}>
+              <Text style={styles.heroBig}>
+                <Text style={{ color: theme.colors.onBackground }}>
+                  {targetKcal > 0 ? formatKcal(Math.abs(remainingKcal)) : formatKcal(totals.calories)}
                 </Text>
-              ) : null}
+                <Text style={[styles.heroUnit, { color: theme.colors.onSurfaceVariant }]}>
+                  {targetKcal > 0 ? (remainingKcal >= 0 ? ' kcal left' : ' kcal over') : ' kcal logged'}
+                </Text>
+              </Text>
+              <Text style={[styles.heroSub, { color: theme.colors.onSurfaceVariant }]}>
+                {targetKcal > 0
+                  ? `Target ${formatKcal(targetKcal)} kcal${totals.burned > 0 ? ` · ${formatKcal(totals.burned)} burned` : ''}`
+                  : 'No daily target yet. Set one to see what is left.'}
+              </Text>
             </View>
-            <CalorieRing
-              size={86}
-              consumed={totals.calories}
-              target={targetKcal || 2100}
-              burned={totals.burned}
-              center={
-                <View style={[styles.fireChip, { backgroundColor: theme.colors.primaryContainer }]}>
-                  <MaterialCommunityIcons name="fire" size={24} color={theme.colors.primary} />
-                </View>
-              }
-            />
+            {targetKcal > 0 ? (
+              <CalorieRing
+                size={100}
+                consumed={totals.calories}
+                target={targetKcal}
+                center={
+                  <View style={styles.ringEaten}>
+                    <Text style={[styles.ringEatenValue, { color: theme.colors.onBackground }]}>
+                      {formatKcal(totals.calories)}
+                    </Text>
+                    <Text style={[styles.ringEatenLabel, { color: theme.colors.onSurfaceVariant }]}>eaten</Text>
+                  </View>
+                }
+              />
+            ) : (
+              <Pressable
+                onPress={() => (navigation as any).getParent()?.navigate('AccountTab', { screen: 'Goals' })}
+                accessibilityRole="button"
+                accessibilityLabel="Set your daily calorie target"
+                style={({ pressed }) => [
+                  styles.heroCta,
+                  { backgroundColor: theme.colors.primaryContainer },
+                  pressed && { opacity: 0.7 },
+                ]}
+              >
+                <Text style={[styles.heroCtaText, { color: theme.colors.onPrimaryContainer }]}>Set target</Text>
+              </Pressable>
+            )}
           </View>
 
           {target ? (
-            <View style={styles.glanceRow}>
-              <MacroRingTile
-                value={Math.max(0, Math.round(target.proteinGrams - totals.protein))}
-                unit="g"
-                progress={target.proteinGrams > 0 ? totals.protein / target.proteinGrams : 0}
-                over={totals.protein > target.proteinGrams}
-                label="Protein left"
-                overLabel="Protein over"
-                color={s.macroProtein}
-                icon="food-drumstick-outline"
-                style={{ backgroundColor: s.proteinTint }}
-              />
-              <MacroRingTile
-                value={Math.max(0, Math.round(target.carbsGrams - totals.carbs))}
-                unit="g"
-                progress={target.carbsGrams > 0 ? totals.carbs / target.carbsGrams : 0}
-                over={totals.carbs > target.carbsGrams}
-                label="Carbs left"
-                overLabel="Carbs over"
-                color={s.macroCarbs}
-                icon="barley"
-                style={{ backgroundColor: s.carbsTint }}
-              />
-              <MacroRingTile
-                value={Math.max(0, Math.round(target.fatGrams - totals.fat))}
-                unit="g"
-                progress={target.fatGrams > 0 ? totals.fat / target.fatGrams : 0}
-                over={totals.fat > target.fatGrams}
-                label="Fat left"
-                overLabel="Fat over"
-                color={s.macroFat}
-                icon="food-apple-outline"
-                style={{ backgroundColor: s.fatTint }}
-              />
+            <View style={[styles.macroCard, { backgroundColor: theme.colors.surface }]}>
+              <Text style={[styles.macroCardTitle, { color: theme.colors.onSurface }]}>Macros</Text>
+              <MacroBars carbs={totals.carbs} protein={totals.protein} fat={totals.fat} targets={target} />
             </View>
           ) : null}
 
@@ -296,7 +285,7 @@ const styles = StyleSheet.create({
   bellChip: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
   greeting: { fontSize: 20, fontWeight: '700', fontFamily: fontFamilies.semibold },
   dateLine: { fontSize: 12.5, marginTop: 1, fontFamily: fontFamilies.regular },
-  ringRow: {
+  hero: {
     alignSelf: 'stretch',
     marginHorizontal: 16,
     marginTop: 14,
@@ -308,11 +297,17 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     gap: 12,
   },
-  ringNumbers: { flex: 1, gap: 2 },
-  ringBig: { fontSize: 30, fontFamily: fontFamilies.semibold, letterSpacing: -0.5 },
-  ringCaption: { fontSize: 13, fontFamily: fontFamilies.regular },
-  ringBurned: { fontSize: 12.5, fontFamily: fontFamilies.regular, marginTop: 2 },
-  glanceRow: { flexDirection: 'row', gap: 10, paddingHorizontal: 16, marginTop: 12 },
+  heroNumbers: { flex: 1, gap: 2 },
+  heroBig: { fontSize: 30, fontFamily: fontFamilies.semibold, letterSpacing: -0.5 },
+  heroUnit: { fontSize: 14, fontFamily: fontFamilies.regular },
+  heroSub: { fontSize: 12.5, fontFamily: fontFamilies.regular },
+  ringEaten: { alignItems: 'center' },
+  ringEatenValue: { fontSize: 19, fontWeight: '600', fontFamily: fontFamilies.semibold },
+  ringEatenLabel: { fontSize: 10.5, fontFamily: fontFamilies.regular },
+  heroCta: { paddingHorizontal: 14, paddingVertical: 9, borderRadius: 999 },
+  heroCtaText: { fontSize: 13, fontFamily: fontFamilies.medium },
+  macroCard: { marginHorizontal: 16, marginTop: 12, borderRadius: 22, paddingVertical: 12, paddingHorizontal: 14 },
+  macroCardTitle: { fontSize: 15, fontWeight: '600', fontFamily: fontFamilies.semibold, marginBottom: 10 },
   section: { fontSize: 13, fontWeight: '600', paddingHorizontal: 16, marginTop: 16, marginBottom: 6, fontFamily: fontFamilies.semibold },
   weekHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
   weekTitle: { fontSize: 15, fontWeight: '600', fontFamily: fontFamilies.semibold },
@@ -320,7 +315,6 @@ const styles = StyleSheet.create({
   weekCard: { marginHorizontal: 16, marginTop: 12, borderRadius: 22, paddingVertical: 12, paddingHorizontal: 14 },
   insightRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginHorizontal: 16, marginTop: 12, borderRadius: 16, paddingVertical: 10, paddingHorizontal: 12 },
   insightIcon: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
-  fireChip: { width: 46, height: 46, borderRadius: 23, alignItems: 'center', justifyContent: 'center' },
   insightText: { flex: 1, fontSize: 13, fontFamily: fontFamilies.regular },
   loading: { padding: 24 },
   list: { paddingHorizontal: 16 },

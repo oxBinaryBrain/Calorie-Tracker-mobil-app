@@ -410,6 +410,8 @@ export default function WeeklySummaryScreen({ navigation }: { navigation?: Nativ
       <View style={styles.tiles}>
         <StatTile
           icon="scale-bathroom"
+          iconColor={theme.colors.onSurfaceVariant}
+          style={{ backgroundColor: s.weightTint }}
           label="Weight"
           value={weightChange != null ? `${weightChange > 0 ? '+' : ''}${weightChange.toFixed(1)} kg` : '—'}
           hint={weights.length >= 2 ? `${weights[0].date.slice(5)} → ${weights[weights.length - 1].date.slice(5)}` : 'this week'}
@@ -417,7 +419,7 @@ export default function WeeklySummaryScreen({ navigation }: { navigation?: Nativ
         <StatTile
           icon="moon-waning-crescent"
           iconColor={theme.colors.tertiary}
-          style={{ backgroundColor: theme.colors.tertiaryContainer }}
+          style={{ backgroundColor: s.sleepTint }}
           label="Sleep"
           value={avgSleep != null ? `${avgSleep.toFixed(1)} h` : '—'}
           hint={sleeps.length ? `avg · ${sleeps.length} ${sleeps.length === 1 ? 'night' : 'nights'}` : 'not logged'}

@@ -7,7 +7,8 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { TrackersTabParams } from '../../navigation/types';
 import type { SleepQuality } from '../../types';
 import { useDayTracker, useTrackerRange, useUpsertTracker, useProfile } from '../../hooks/queries';
-import { addDays, dateKey, formatMl } from '../../utils';
+import { dateKey, formatMl } from '../../utils';
+import { fontFamilies, semantic } from '../../theme';
 import { effectiveWaterGoalMl } from '../../services/targets';
 import { tickLight } from '../../services/haptics';
 import { usePrefs } from '../../stores';
@@ -29,6 +30,7 @@ function monthBounds(key: string) {
 
 export default function TrackersScreen({ navigation }: Props) {
   const theme = useTheme();
+  const s = semantic(theme);
   const qc = useQueryClient();
   const today = dateKey();
   const tracker = useDayTracker(today);
@@ -52,6 +54,7 @@ export default function TrackersScreen({ navigation }: Props) {
   // Water progress for today against the personalized goal.
   const waterMl = t?.waterMl ?? 0;
   const waterPct = Math.min(100, Math.round((waterMl / goalMl) * 100));
+  const waterLeftMl = Math.max(0, goalMl - waterMl);
 
   // Last weighed-in value and its change since the previous weighing.
   const weighIns = (month.data ?? [])
@@ -66,11 +69,15 @@ export default function TrackersScreen({ navigation }: Props) {
     upsert.mutate({ date: today, waterMl: Math.max(0, waterMl + ml) });
   };
 
+  // Each tracker carries its own tint and icon colour, the same way meals and
+  // macros are tinted elsewhere: the colour says which tracker you are in.
   const rows = [
     {
       key: 'weight',
       title: 'Weight',
       icon: 'scale-bathroom',
+      tint: s.weightTint,
+      iconColor: theme.colors.onSurfaceVariant,
       value: lastWeight != null ? `${lastWeight} kg` : 'Not noted yet',
       detail:
         weightDelta == null
@@ -84,6 +91,8 @@ export default function TrackersScreen({ navigation }: Props) {
       key: 'sleep',
       title: 'Sleep',
       icon: 'sleep',
+      tint: s.sleepTint,
+      iconColor: theme.colors.tertiary,
       value:
         t?.sleepHours != null
           ? `${t.sleepHours} h${t.sleepQuality ? ` · ${QUALITY_LABELS[t.sleepQuality]}` : ''}`
@@ -104,7 +113,8 @@ export default function TrackersScreen({ navigation }: Props) {
       </Text>
 
       {/* Water card with inline progress and quick-add, so the common action
-          needs no round-trip through the Water screen. */}
+          needs no round-trip through the Water screen. Like the Home hero, it
+          leads with what is left rather than with the running total. */}
       <Card
         mode="contained"
         style={styles.card}
@@ -112,24 +122,33 @@ export default function TrackersScreen({ navigation }: Props) {
       >
         <Card.Content>
           <View style={styles.row}>
-            <View style={[styles.iconWrap, { backgroundColor: theme.colors.primaryContainer }]}>
-              <MaterialCommunityIcons name="cup-water" size={22} color={theme.colors.onPrimaryContainer} />
+            <View style={[styles.iconWrap, { backgroundColor: s.waterTint }]}>
+              <MaterialCommunityIcons name="cup-water" size={22} color={theme.colors.primary} />
             </View>
             <View style={styles.textWrap}>
               <Text style={[styles.title, { color: theme.colors.onSurface }]}>Water</Text>
               <Text style={[styles.value, { color: theme.colors.onSurfaceVariant }]}>
-                {formatMl(waterMl)} of {formatMl(goalMl)} · {waterPct}%
+                {waterLeftMl > 0 ? `${formatMl(waterLeftMl)} left` : 'Goal met'}
               </Text>
             </View>
-            <Text style={[styles.chevron, { color: theme.colors.onSurfaceVariant }]}>›</Text>
+            <MaterialCommunityIcons
+              name="chevron-right"
+              size={18}
+              color={theme.colors.onSurfaceVariant}
+              accessibilityElementsHidden
+              importantForAccessibility="no"
+            />
           </View>
           <View
-            style={[styles.progressTrack, { backgroundColor: theme.colors.surfaceVariant }]}
+            style={[styles.progressTrack, { backgroundColor: s.waterTint }]}
             accessibilityRole="progressbar"
             accessibilityValue={{ min: 0, max: 100, now: waterPct, text: `${waterPct} percent of daily water goal` }}
           >
             <View style={[styles.progressFill, { width: `${waterPct}%`, backgroundColor: theme.colors.primary }]} />
           </View>
+          <Text style={[styles.barMeta, { color: theme.colors.onSurfaceVariant }]}>
+            {formatMl(waterMl)} of {formatMl(goalMl)} · {waterPct}%
+          </Text>
           <View style={styles.chipRow}>
             {WATER_CHIPS.map((ml) => (
               <QuickChip key={ml} label={`+${ml}`} onPress={() => addWater(ml)} />
@@ -147,14 +166,20 @@ export default function TrackersScreen({ navigation }: Props) {
         >
           <Card.Content>
             <View style={styles.row}>
-              <View style={[styles.iconWrap, { backgroundColor: theme.colors.primaryContainer }]}>
-                <MaterialCommunityIcons name={card.icon as any} size={22} color={theme.colors.onPrimaryContainer} />
+              <View style={[styles.iconWrap, { backgroundColor: card.tint }]}>
+                <MaterialCommunityIcons name={card.icon as any} size={22} color={card.iconColor} />
               </View>
               <View style={styles.textWrap}>
                 <Text style={[styles.title, { color: theme.colors.onSurface }]}>{card.title}</Text>
                 <Text style={[styles.value, { color: theme.colors.onSurfaceVariant }]}>{card.value}</Text>
               </View>
-              <Text style={[styles.chevron, { color: theme.colors.onSurfaceVariant }]}>›</Text>
+              <MaterialCommunityIcons
+                name="chevron-right"
+                size={18}
+                color={theme.colors.onSurfaceVariant}
+                accessibilityElementsHidden
+                importantForAccessibility="no"
+              />
             </View>
             <Text style={[styles.cardDetail, { color: theme.colors.onSurfaceVariant }]}>{card.detail}</Text>
           </Card.Content>
@@ -165,16 +190,16 @@ export default function TrackersScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  intro: { fontSize: 13.5, padding: 16, paddingBottom: 8 },
+  intro: { fontSize: 13.5, padding: 16, paddingBottom: 8, fontFamily: fontFamilies.regular },
   card: { marginHorizontal: 16, marginBottom: 12, borderRadius: 16 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   iconWrap: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   textWrap: { flex: 1, gap: 1 },
-  title: { fontSize: 15.5, fontWeight: '600' },
-  value: { fontSize: 13 },
-  chevron: { fontSize: 22, fontWeight: '400' },
+  title: { fontSize: 15.5, fontFamily: fontFamilies.semibold },
+  value: { fontSize: 13, fontFamily: fontFamilies.regular },
   progressTrack: { height: 8, borderRadius: 4, marginTop: 12, overflow: 'hidden' },
   progressFill: { height: 8, borderRadius: 4 },
+  barMeta: { fontSize: 12, marginTop: 8, fontFamily: fontFamilies.regular },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 10, marginBottom: 2 },
-  cardDetail: { fontSize: 12.5, marginTop: 10, marginLeft: 58 },
+  cardDetail: { fontSize: 12.5, marginTop: 10, marginLeft: 58, fontFamily: fontFamilies.regular },
 });

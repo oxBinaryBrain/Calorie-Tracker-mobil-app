@@ -4,9 +4,25 @@ import { Card, useTheme } from 'react-native-paper';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import type { Entry } from '../../types';
 import { semantic } from '../../theme';
-import { formatKcal } from '../../utils';
+import type { SemanticColors } from '../../theme';
+import { formatKcal, mealSlot } from '../../utils';
+import type { MealSlot } from '../../utils';
 import { EmptyState } from './feedback';
 import { styles } from './styles';
+
+/** Meal slot look: the colour says which meal, the icon names it. */
+function slotLook(s: SemanticColors, slot: MealSlot): { icon: string; color: string; tint: string } {
+  switch (slot) {
+    case 'breakfast':
+      return { icon: 'coffee-outline', color: s.macroFat, tint: s.mealTint };
+    case 'lunch':
+      return { icon: 'silverware-fork-knife', color: s.macroCarbs, tint: s.carbsTint };
+    case 'dinner':
+      return { icon: 'pot-steam-outline', color: s.macroProtein, tint: s.proteinTint };
+    case 'snack':
+      return { icon: 'cookie-outline', color: s.macroFat, tint: s.mealTint };
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Entry list (shared by Home and Diary DayDetail)
@@ -35,6 +51,10 @@ export function EntryCard({ entry, onPress }: { entry: Entry; onPress?: () => vo
   const theme = useTheme();
   const s = semantic(theme);
   const isFood = entry.type === 'food';
+  // Movement keeps the green tint; food is tinted by the meal it was logged in.
+  const look = isFood
+    ? slotLook(s, mealSlot(entry.loggedAt))
+    : { icon: 'run', color: theme.colors.tertiary, tint: s.workoutTint };
   const kcalText = isFood
     ? `plus ${formatKcal(entry.calories)} calories`
     : entry.caloriesBurned
@@ -48,18 +68,19 @@ export function EntryCard({ entry, onPress }: { entry: Entry; onPress?: () => vo
       accessibilityRole={onPress ? 'button' : undefined}
       accessibilityLabel={onPress ? `${entry.title}, ${kcalText}` : undefined}
     >
+      <View
+        style={[styles.entryEdge, { backgroundColor: look.color }]}
+        accessibilityElementsHidden
+        importantForAccessibility="no"
+      />
       <Card.Content style={styles.entryContent}>
         {/* Image-style slot: a real photo when the entry has one; otherwise a
-            quiet tinted tile with the kind's icon (no fake imagery). */}
-        <View style={[styles.entryThumb, { backgroundColor: isFood ? s.mealTint : s.workoutTint }]}>
+            quiet tinted tile with the meal's icon (no fake imagery). */}
+        <View style={[styles.entryThumb, { backgroundColor: look.tint }]}>
           {entry.photoUrl ? (
             <Image source={{ uri: entry.photoUrl }} style={StyleSheet.absoluteFill} resizeMode="cover" />
           ) : (
-            <MaterialCommunityIcons
-              name={(isFood ? 'food-outline' : 'run')} as any
-              size={22}
-              color={isFood ? s.macroFat : theme.colors.tertiary}
-            />
+            <MaterialCommunityIcons name={look.icon as any} size={22} color={look.color} />
           )}
         </View>
         <View style={styles.entryLeft}>
