@@ -28,10 +28,14 @@ const queryClient = new QueryClient({
 
 /**
  * Poppins is the app face across all platforms. Web gets @font-face rules
- * (the woff2 variable font served from public/fonts); native loads the four
- * TTFs through useFonts and the expo-font config plugin embeds them at build
- * time. The re-asserted `[dir="auto"]` rule overrides react-native-web's
- * hardcoded system stack on every text node, matching the native behavior.
+ * (the TTFs served from public/fonts); native loads the four TTFs through
+ * useFonts and the expo-font config plugin embeds them at build time.
+ * Every text node sets an explicit family through the theme fonts or the
+ * POPP_* styles, so react-native-web's `.r-fontFamily-*` classes resolve each
+ * weight role to its own face. A blanket `[dir="auto"]` override used to
+ * force the 400 face everywhere; it tied in specificity with those classes
+ * and won on document order, collapsing medium/semibold/bold roles to
+ * synthetic bold on the regular face. It is gone; do not bring it back.
  */
 const POPPIN_SOURCES = {
   [fontFamilies.regular]: require('./assets/fonts/Poppins-Regular.ttf'),
@@ -79,12 +83,11 @@ export default function App() {
           @font-face { font-family: 'Poppins_600SemiBold'; src: url('/fonts/Poppins-SemiBold.ttf') format('truetype'); font-weight: 600; font-display: swap; }
           @font-face { font-family: 'Poppins_700Bold'; src: url('/fonts/Poppins-Bold.ttf') format('truetype'); font-weight: 700; font-display: swap; }
           html, body, #root, #main { height: 100%; margin: 0; overflow: hidden; }
+          /* Root fallback only. RNW text nodes resolve their own family via
+             .r-fontFamily-* classes; a [dir="auto"] override here would beat
+             those classes on document order and flatten every weight role to
+             the 400 face. */
           html { font-family: 'Poppins_400Regular', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
-          /* react-native-web hardcodes its own System stack on every text node;
-             re-assert Poppins (this <style> sits in body, so it wins the cascade
-             over RNW's head-injected classes). No !important: that would also
-             beat the inline icon-font families on vector icons. */
-          [dir="auto"] { font-family: 'Poppins_400Regular', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
           ::-webkit-scrollbar { width: 0; height: 0; }
           * { -webkit-tap-highlight-color: transparent; }
         `}</style>
@@ -107,5 +110,8 @@ export default function App() {
 const styles = StyleSheet.create({
   webSplash: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10 },
   webSplashMark: { width: 64, height: 64 },
+  // The web splash renders before useFonts resolves, so it deliberately has
+  // no fontFamily: the Poppins faces are not usable yet and the system font
+  // shows immediately instead of sitting in the font-display block period.
   webSplashName: { fontSize: 22, letterSpacing: 0.5, color: '#1B2023', fontWeight: '600' },
 });
