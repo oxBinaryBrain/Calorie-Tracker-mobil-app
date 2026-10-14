@@ -80,3 +80,13 @@ export function effectiveWaterGoalMl(
   if (customMl != null && customMl > 0) return Math.round(customMl / 50) * 50;
   return waterGoalMl(weightKg, activityLevel);
 }
+
+/**
+ * Whether a day's stored water reached the goal. The single definition of "met":
+ * a day with no tracker row is zero and therefore unmet, so tallies across the
+ * Water screen and the weekly summary agree. The goal passed in must be the
+ * effective one from useWaterGoal, not a re-derived value.
+ */
+export function waterGoalMet(waterMl: number | null | undefined, goalMl: number): boolean {
+  return (waterMl ?? 0) >= goalMl;
+}

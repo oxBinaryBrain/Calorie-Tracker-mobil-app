@@ -7,12 +7,11 @@ import { useQueryClient } from '@tanstack/react-query';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { TrackersTabParams } from '../../navigation/types';
 import type { SleepQuality } from '../../types';
-import { useDayTracker, useTrackerRange, useUpsertTracker, useAddWater, useProfile } from '../../hooks/queries';
+import { useDayTracker, useTrackerRange, useUpsertTracker, useProfile } from '../../hooks/queries';
+import { useWaterDay } from '../../hooks/useWaterDay';
 import { addDays, dateKey, formatDateLong, formatMl } from '../../utils';
-import { effectiveWaterGoalMl } from '../../services/targets';
+import { waterGoalMet } from '../../services/targets';
 import { planWeightGoal, type WeightPoint } from '../../services/weight';
-import { tickLight } from '../../services/haptics';
-import { usePrefs } from '../../stores';
 import { QuickChip, Screen, SectionTitle, EmptyState } from '../../components/ui';
 
 type WaterProps = NativeStackScreenProps<TrackersTabParams, 'Water'>;
@@ -41,33 +40,19 @@ function useRefresh() {
 export function WaterScreen({ route }: WaterProps) {
   const theme = useTheme();
   const date = route.params?.date ?? dateKey();
-  const tracker = useDayTracker(date);
-  const upsert = useUpsertTracker();
-  const addWater = useAddWater();
-  const profile = useProfile();
-  const waterGoalPref = usePrefs((s) => s.waterGoalMl);
-  const current = tracker.data;
-  const goalMl = effectiveWaterGoalMl(waterGoalPref, profile.data?.weightKg, profile.data?.activityLevel);
-  const isCustomGoal = waterGoalPref != null;
+  const { goalMl, loggedMl, percent: pct, isCustomGoal, add, setWaterMl } = useWaterDay(date);
   const history = useTrackerRange(addDays(date, -6), date);
   const { refreshing, onRefresh } = useRefresh();
   const historyDays = Array.from({ length: 7 }, (_, i) => addDays(date, -6 + i)).map((d) => ({
     date: d,
     ml: (history.data ?? []).find((t) => t.date === d)?.waterMl ?? 0,
   }));
-  const metCount = historyDays.filter((d) => d.ml >= goalMl).length;
-
-  const add = (ml: number) => {
-    tickLight();
-    addWater.mutate({ date, ml });
-  };
-
-  const pct = Math.min(100, Math.round(((current?.waterMl ?? 0) / goalMl) * 100));
+  const metCount = historyDays.filter((d) => waterGoalMet(d.ml, goalMl)).length;
 
   return (
     <Screen scroll title="Water today" refreshing={refreshing} onRefresh={onRefresh}>
       <Text style={[styles.sub, { color: theme.colors.onSurfaceVariant }]}>
-        {formatMl(current?.waterMl ?? 0)} · about {pct}% of your {formatMl(goalMl)} day
+        {formatMl(loggedMl)} · about {pct}% of your {formatMl(goalMl)} day
       </Text>
       <Text style={[styles.goalNote, { color: theme.colors.onSurfaceVariant }]}>
         {isCustomGoal
@@ -91,8 +76,8 @@ export function WaterScreen({ route }: WaterProps) {
       </View>
 
       <View style={styles.chips}>
-        <QuickChip label="− 100 ml" onPress={() => { tickLight(); addWater.mutate({ date, ml: -100 }); }} />
-        <QuickChip label="Set to 0" onPress={() => upsert.mutate({ date, waterMl: 0 })} />
+        <QuickChip label="− 100 ml" onPress={() => add(-100)} />
+        <QuickChip label="Set to 0" onPress={() => setWaterMl(0)} />
       </View>
 
       <SectionTitle text="Last 7 days" />
@@ -126,7 +111,7 @@ function WaterHistoryStrip({ days, goalMl, theme }: {
     >
       {days.map((d) => {
         const isToday = d.date === todayKey;
-        const met = d.ml > 0 && d.ml >= goalMl;
+        const met = waterGoalMet(d.ml, goalMl);
         const barH = Math.max(4, Math.round((d.ml / max) * 40));
         return (
           <View key={d.date} style={styles.histCol}>

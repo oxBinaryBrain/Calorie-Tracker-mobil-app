@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { bmrMifflinStJeor, previewTargets, waterGoalMl } from '../src/services/targets';
+import {
+  bmrMifflinStJeor,
+  effectiveWaterGoalMl,
+  previewTargets,
+  waterGoalMet,
+  waterGoalMl,
+} from '../src/services/targets';
 import type { OnboardingPayload } from '../src/types';
 
 const profile = (over: Partial<OnboardingPayload> = {}): OnboardingPayload => ({
@@ -74,5 +80,34 @@ describe('waterGoalMl', () => {
     expect(waterGoalMl(45, 'sedentary')).toBe(1500); // 1350 → floor clamp
     expect(waterGoalMl(200, 'athlete')).toBe(4000); // 7000 → ceiling clamp
     expect(waterGoalMl(61.4, 'light')).toBe(2100); // 1842 + 250 = 2092 → 2100
+  });
+});
+
+describe('waterGoalMet', () => {
+  it('counts a day at or above the goal as met', () => {
+    expect(waterGoalMet(2600, 2600)).toBe(true);
+    expect(waterGoalMet(2750, 2600)).toBe(true);
+  });
+
+  it('treats a shortfall, zero and a missing row as unmet', () => {
+    expect(waterGoalMet(2550, 2600)).toBe(false);
+    expect(waterGoalMet(0, 2600)).toBe(false);
+    expect(waterGoalMet(undefined, 2600)).toBe(false);
+    expect(waterGoalMet(null, 2600)).toBe(false);
+  });
+
+  it('measures against whichever goal is passed, custom or derived', () => {
+    const custom = effectiveWaterGoalMl(1500, 70, 'moderate'); // 1.5 L wins over the 2.6 L auto goal
+    const auto = effectiveWaterGoalMl(null, 70, 'moderate');
+    expect(custom).toBe(1500);
+    expect(auto).toBe(2600);
+    expect(waterGoalMet(1600, custom)).toBe(true);
+    expect(waterGoalMet(1600, auto)).toBe(false);
+  });
+
+  it('tallies a week the way the Water screen and the summary both read it', () => {
+    const goal = 2600;
+    const week = [0, 2600, 1500, 3200, undefined, 2600, 100];
+    expect(week.filter((ml) => waterGoalMet(ml, goal)).length).toBe(3);
   });
 });

@@ -5,6 +5,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { BarChart } from 'react-native-gifted-charts';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useEntriesRange, useTargets, useTrackerRange, useProfile, weekRange } from '../../hooks/queries';
+import { useWaterGoal } from '../../hooks/useWaterDay';
+import { waterGoalMet } from '../../services/targets';
 import { addDays, formatKcal, formatMl } from '../../utils';
 import { LargeTitleScreen, StatTile, SectionTitle, EmptyState } from '../../components/ui';
 import { semantic, fontFamilies } from '../../theme';
@@ -51,6 +53,8 @@ export default function WeeklySummaryScreen({ navigation }: { navigation?: Nativ
   const prevTrackers = useTrackerRange(prev.from, prev.to);
   const targets = useTargets();
   const profile = useProfile();
+  // Same goal the rings, the Water screen and Account use — never re-derived here.
+  const { goalMl: waterGoalMl } = useWaterGoal();
 
   // Multi-week window for "Trends beyond the week": TREND_WEEKS full weeks
   // before this one, plus the current week (fetched separately above).
@@ -175,6 +179,7 @@ export default function WeeklySummaryScreen({ navigation }: { navigation?: Nativ
 
   const waterLoggedDays = (trackers.data ?? []).filter((t) => t.waterMl > 0).length;
   const waterTotalMl = (trackers.data ?? []).reduce((sum, t) => sum + t.waterMl, 0);
+  const waterGoalMetDays = (trackers.data ?? []).filter((t) => waterGoalMet(t.waterMl, waterGoalMl)).length;
 
   // ---- Nutrition averages (this week, logged food days only) ----------------
   const macroAvgs = React.useMemo(() => {
@@ -432,6 +437,9 @@ export default function WeeklySummaryScreen({ navigation }: { navigation?: Nativ
           hint={waterLoggedDays > 0 ? `${waterLoggedDays} ${waterLoggedDays === 1 ? 'day' : 'days'}` : 'not logged'}
         />
       </View>
+      <Text style={[styles.chartNote, { color: s.mutedText, textAlign: 'left', marginBottom: 8 }]}>
+        Water goal {formatMl(waterGoalMl)} a day · met on {waterGoalMetDays} of 7 days.
+      </Text>
 
       {/* ---- Longer trend: weekly averages --------------------------------- */}
       <SectionTitle text="Trends" style={styles.sectionGap} />
