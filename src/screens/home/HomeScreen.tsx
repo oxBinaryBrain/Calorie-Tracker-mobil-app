@@ -7,7 +7,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { HomeTabParams } from '../../navigation/types';
 import type { ParsedEntry } from '../../types';
 import { useQueryClient } from '@tanstack/react-query';
-import { useDayEntries, todayTotals, useTargets, useDayTracker, useUpsertTracker, useProfile, useEntriesRange, weekRange } from '../../hooks/queries';
+import { useDayEntries, todayTotals, useTargets, useDayTracker, useAddWater, useProfile, useEntriesRange, weekRange } from '../../hooks/queries';
 import { dateKey, formatKcal, formatMl, greeting } from '../../utils';
 import { fontFamilies, semantic } from '../../theme';
 import { effectiveWaterGoalMl } from '../../services/targets';
@@ -28,7 +28,7 @@ export default function HomeScreen({ navigation }: Props) {
   const targets = useTargets();
   const profile = useProfile();
   const tracker = useDayTracker(today);
-  const upsertTracker = useUpsertTracker();
+  const addWater = useAddWater();
   const waterGoalPref = usePrefs((s) => s.waterGoalMl);
   const [refreshing, setRefreshing] = React.useState(false);
   const queryClient = useQueryClient();
@@ -231,7 +231,7 @@ export default function HomeScreen({ navigation }: Props) {
           <WaterQuickAdd
             loggedMl={waterToday}
             goalMl={goalMl}
-            onAdd={(ml) => upsertTracker.mutate({ date: today, waterMl: Math.max(0, waterToday + ml) })}
+            onAdd={(ml) => addWater.mutate({ date: today, ml })}
           />
 
           <Pressable

@@ -112,6 +112,47 @@ export function useUpsertTracker() {
   });
 }
 
+/**
+ * Relative water change (+250, −100). The increment is computed against the
+ * stored value inside mutationFn, not the rendered total: two quick-adds
+ * close together would both read the same stale number and the first one
+ * would be silently lost. The optimistic cache update makes each tap feel
+ * instant; onError rolls it back.
+ */
+export function useAddWater() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ date, ml }: { date: string; ml: number }) => {
+      const current = await trackerRepo.get(date);
+      return trackerRepo.upsert({ ...current, date, waterMl: Math.max(0, (current.waterMl ?? 0) + ml) });
+    },
+    onMutate: async ({ date, ml }) => {
+      const key = queryKeys.tracker(date);
+      await qc.cancelQueries({ queryKey: key });
+      const previous = qc.getQueryData<DayTracker>(key);
+      if (previous) {
+        qc.setQueryData<DayTracker>(key, {
+          ...previous,
+          waterMl: Math.max(0, (previous.waterMl ?? 0) + ml),
+        });
+      }
+      return { key, previous };
+    },
+    onError: (_error, _vars, context) => {
+      if (context?.previous) qc.setQueryData(context.key, context.previous);
+      // Lazy import: a static import would drag expo modules into unit tests.
+      void import('../stores').then(
+        (m) => m.useToasts.getState().show('Could not save that — try again'),
+        () => undefined,
+      );
+    },
+    onSuccess: (t) => {
+      void qc.invalidateQueries({ queryKey: queryKeys.tracker(t.date) });
+      void qc.invalidateQueries({ queryKey: ['trackers'] });
+    },
+  });
+}
+
 // ----------------------------- Targets & profile ---------------------------
 
 export function useTargets() {

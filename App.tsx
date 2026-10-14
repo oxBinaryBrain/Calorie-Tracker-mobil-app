@@ -90,6 +90,12 @@ export default function App() {
           html { font-family: 'Poppins_400Regular', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
           ::-webkit-scrollbar { width: 0; height: 0; }
           * { -webkit-tap-highlight-color: transparent; }
+          /* react-native-web suppresses the native focus ring on pressables,
+             which leaves keyboard users with no way to see where focus is.
+             Re-add it for keyboard focus only (:focus-visible) so pointer and
+             touch interactions stay clean. Blue500 clears 4.5:1 against both
+             the light canvas and the dark surface. */
+          :focus-visible { outline: 2px solid #3A6B8A; outline-offset: 2px; border-radius: 8px; }
         `}</style>
       ) : null}
       <SafeAreaProvider>

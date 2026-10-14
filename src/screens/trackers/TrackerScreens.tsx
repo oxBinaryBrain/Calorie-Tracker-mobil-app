@@ -7,7 +7,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { TrackersTabParams } from '../../navigation/types';
 import type { SleepQuality } from '../../types';
-import { useDayTracker, useTrackerRange, useUpsertTracker, useProfile } from '../../hooks/queries';
+import { useDayTracker, useTrackerRange, useUpsertTracker, useAddWater, useProfile } from '../../hooks/queries';
 import { addDays, dateKey, formatDateLong, formatMl } from '../../utils';
 import { effectiveWaterGoalMl } from '../../services/targets';
 import { planWeightGoal, type WeightPoint } from '../../services/weight';
@@ -43,6 +43,7 @@ export function WaterScreen({ route }: WaterProps) {
   const date = route.params?.date ?? dateKey();
   const tracker = useDayTracker(date);
   const upsert = useUpsertTracker();
+  const addWater = useAddWater();
   const profile = useProfile();
   const waterGoalPref = usePrefs((s) => s.waterGoalMl);
   const current = tracker.data;
@@ -58,7 +59,7 @@ export function WaterScreen({ route }: WaterProps) {
 
   const add = (ml: number) => {
     tickLight();
-    upsert.mutate({ date, waterMl: (current?.waterMl ?? 0) + ml });
+    addWater.mutate({ date, ml });
   };
 
   const pct = Math.min(100, Math.round(((current?.waterMl ?? 0) / goalMl) * 100));
@@ -90,7 +91,7 @@ export function WaterScreen({ route }: WaterProps) {
       </View>
 
       <View style={styles.chips}>
-        <QuickChip label="− 100 ml" onPress={() => { tickLight(); upsert.mutate({ date, waterMl: Math.max(0, (current?.waterMl ?? 0) - 100) }); }} />
+        <QuickChip label="− 100 ml" onPress={() => { tickLight(); addWater.mutate({ date, ml: -100 }); }} />
         <QuickChip label="Set to 0" onPress={() => upsert.mutate({ date, waterMl: 0 })} />
       </View>
 

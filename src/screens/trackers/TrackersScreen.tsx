@@ -6,7 +6,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { TrackersTabParams } from '../../navigation/types';
 import type { SleepQuality } from '../../types';
-import { useDayTracker, useTrackerRange, useUpsertTracker, useProfile } from '../../hooks/queries';
+import { useDayTracker, useTrackerRange, useAddWater, useProfile } from '../../hooks/queries';
 import { dateKey, formatMl } from '../../utils';
 import { fontFamilies, semantic } from '../../theme';
 import { effectiveWaterGoalMl } from '../../services/targets';
@@ -34,7 +34,7 @@ export default function TrackersScreen({ navigation }: Props) {
   const qc = useQueryClient();
   const today = dateKey();
   const tracker = useDayTracker(today);
-  const upsert = useUpsertTracker();
+  const addWater = useAddWater();
   const profile = useProfile();
   const waterGoalPref = usePrefs((s) => s.waterGoalMl);
   const goalMl = effectiveWaterGoalMl(waterGoalPref, profile.data?.weightKg, profile.data?.activityLevel);
@@ -64,9 +64,9 @@ export default function TrackersScreen({ navigation }: Props) {
   const prevWeight = weighIns.length >= 2 ? weighIns[weighIns.length - 2].weightKg : undefined;
   const weightDelta = lastWeight != null && prevWeight != null ? lastWeight - prevWeight : undefined;
 
-  const addWater = (ml: number) => {
+  const addWaterMl = (ml: number) => {
     tickLight();
-    upsert.mutate({ date: today, waterMl: Math.max(0, waterMl + ml) });
+    addWater.mutate({ date: today, ml });
   };
 
   // Each tracker carries its own tint and icon colour, the same way meals and
@@ -151,7 +151,7 @@ export default function TrackersScreen({ navigation }: Props) {
           </Text>
           <View style={styles.chipRow}>
             {WATER_CHIPS.map((ml) => (
-              <QuickChip key={ml} label={`+${ml}`} onPress={() => addWater(ml)} />
+              <QuickChip key={ml} label={`+${ml}`} onPress={() => addWaterMl(ml)} />
             ))}
           </View>
         </Card.Content>

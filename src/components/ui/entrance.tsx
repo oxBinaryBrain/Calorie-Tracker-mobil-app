@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { Animated, Easing, Platform } from 'react-native';
 import { useIsFocused } from '@react-navigation/native';
+import { useReducedMotion } from '../../hooks/useReducedMotion';
 import { styles } from './styles';
 
 // ---------------------------------------------------------------------------
@@ -14,6 +15,9 @@ import { styles } from './styles';
 export function ScreenEntrance({ children }: { children: React.ReactNode }) {
   const animated = Platform.OS !== 'web';
   const focused = useIsFocused();
+  // Respect the system "reduce motion" setting: skip the slide/fade and render
+  // settled, the way a native stack transition respects the same switch.
+  const reduceMotion = useReducedMotion();
   // Bumps every time the screen gains focus (initial push, pop-back, tab
   // return), which is exactly when the native transition would re-run.
   const [runId, setRunId] = React.useState(0);
@@ -21,20 +25,27 @@ export function ScreenEntrance({ children }: { children: React.ReactNode }) {
     if (focused) setRunId((n) => n + 1);
   }, [focused]);
 
-  const slide = React.useRef(new Animated.Value(animated ? 0 : 28)).current;
-  const fade = React.useRef(new Animated.Value(animated ? 1 : 0)).current;
   // Start settled on native (the stack animates instead) and pre-translate on
-  // web so the first frame of the entrance slides in from the right.
+  // web so the first frame of the entrance slides in from the right. With
+  // reduce motion the very first frame is already settled, so there is not
+  // even a single-frame offset before the effect corrects it.
+  const slide = React.useRef(new Animated.Value(animated || reduceMotion ? 0 : 28)).current;
+  const fade = React.useRef(new Animated.Value(animated || reduceMotion ? 1 : 0)).current;
 
   React.useEffect(() => {
     if (animated || runId === 0) return;
+    if (reduceMotion) {
+      slide.setValue(0);
+      fade.setValue(1);
+      return;
+    }
     slide.setValue(28);
     fade.setValue(0);
     Animated.parallel([
       Animated.timing(slide, { toValue: 0, duration: 280, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
       Animated.timing(fade, { toValue: 1, duration: 240, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
     ]).start();
-  }, [runId, animated, slide, fade]);
+  }, [runId, animated, slide, fade, reduceMotion]);
 
   if (animated) return <>{children}</>;
   return (

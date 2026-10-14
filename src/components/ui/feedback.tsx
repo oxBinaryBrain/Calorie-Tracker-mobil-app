@@ -14,7 +14,9 @@ export function ToastHost() {
   const { toasts } = useToasts();
   const theme = useTheme();
   return (
-    <View pointerEvents="none" style={styles.toastHost}>
+    // Live region: toasts are the only feedback for actions like "250 ml
+    // added", so assistive tech must announce them, not just sighted users.
+    <View pointerEvents="none" style={styles.toastHost} accessibilityLiveRegion="polite">
       {toasts.map((t) => (
         <Surface key={t.id} style={[styles.toast, { backgroundColor: theme.colors.inverseSurface }]}>
           <Text style={{ color: theme.colors.inverseOnSurface }}>{t.text}</Text>

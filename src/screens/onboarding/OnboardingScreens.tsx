@@ -11,6 +11,7 @@ import { api } from '../../api/client';
 import { useSession, useToasts } from '../../stores';
 import { previewTargets } from '../../services/targets';
 import { useSetProfile, useSetTargets } from '../../hooks/queries';
+import { useReducedMotion } from '../../hooks/useReducedMotion';
 import { ChoiceGroup, NumberField, PrimaryButton } from '../../components/inputs';
 import { AppHeader, CalorieRing, MacroBars } from '../../components/ui';
 import { fontFamilies } from '../../theme';
@@ -73,16 +74,19 @@ const GOAL_LABELS: Record<Goal, string> = {
  * the stack already animates, mirrors ScreenEntrance's convention. */
 function StepFade({ stepKey, children }: { stepKey: number; children: React.ReactNode }) {
   const animated = Platform.OS !== 'web';
-  const fade = React.useRef(new Animated.Value(animated ? 1 : 0)).current;
-  const rise = React.useRef(new Animated.Value(animated ? 0 : 10)).current;
+  const reduceMotion = useReducedMotion();
+  const settled = animated || reduceMotion;
+  const fade = React.useRef(new Animated.Value(settled ? 1 : 0)).current;
+  const rise = React.useRef(new Animated.Value(settled ? 0 : 10)).current;
   React.useEffect(() => {
-    fade.setValue(animated ? 1 : 0);
-    rise.setValue(animated ? 0 : 10);
+    fade.setValue(settled ? 1 : 0);
+    rise.setValue(settled ? 0 : 10);
+    if (settled) return;
     Animated.parallel([
       Animated.timing(fade, { toValue: 1, duration: 240, useNativeDriver: true }),
       Animated.timing(rise, { toValue: 0, duration: 240, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
     ]).start();
-  }, [stepKey, fade, rise, animated]);
+  }, [stepKey, fade, rise, settled]);
   return <Animated.View style={{ opacity: fade, transform: [{ translateY: rise }] }}>{children}</Animated.View>;
 }
 
@@ -262,14 +266,20 @@ export function TargetRevealScreen({ route, navigation }: NativeStackScreenProps
   const [confirmed, setConfirmed] = React.useState<UserTargets | null>(null);
 
   // Gentle entrance for the reveal.
+  const reduceMotion = useReducedMotion();
   const fade = React.useRef(new Animated.Value(0)).current;
   const rise = React.useRef(new Animated.Value(12)).current;
   React.useEffect(() => {
+    if (reduceMotion) {
+      fade.setValue(1);
+      rise.setValue(0);
+      return;
+    }
     Animated.parallel([
       Animated.timing(fade, { toValue: 1, duration: 380, useNativeDriver: true }),
       Animated.timing(rise, { toValue: 0, duration: 380, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
     ]).start();
-  }, [fade, rise]);
+  }, [fade, rise, reduceMotion]);
 
   React.useEffect(() => {
     let alive = true;

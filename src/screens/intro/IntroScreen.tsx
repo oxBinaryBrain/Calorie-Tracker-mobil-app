@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Animated, Easing } from 'react-native';
 import { useTheme } from 'react-native-paper';
 import { fontFamilies } from '../../theme';
+import { useReducedMotion } from '../../hooks/useReducedMotion';
 
 /**
  * Gentle animated intro: logo scales in with the wordmark, a thin line draws
@@ -16,6 +17,7 @@ export default function IntroScreen({ onDone: rawOnDone }: { onDone: () => void 
   const doneRef = React.useRef(rawOnDone);
   const stableDone = React.useCallback(() => doneRef.current(), []);
   const theme = useTheme();
+  const reduceMotion = useReducedMotion();
   const logoScale = React.useMemo(() => new Animated.Value(0.6), []);
   const logoOpacity = React.useMemo(() => new Animated.Value(0), []);
   const titleOpacity = React.useMemo(() => new Animated.Value(0), []);
@@ -25,6 +27,19 @@ export default function IntroScreen({ onDone: rawOnDone }: { onDone: () => void 
   const fadeOut = React.useMemo(() => new Animated.Value(1), []);
 
   React.useEffect(() => {
+    // Respect the system "reduce-motion" setting: skip the spring, line-draw
+    // and cross-fade. Render the wordmark settled, hold briefly so the brand
+    // screen still registers, then dismiss without a fade.
+    if (reduceMotion) {
+      logoScale.setValue(1);
+      logoOpacity.setValue(1);
+      titleOpacity.setValue(1);
+      titleTranslate.setValue(0);
+      taglineOpacity.setValue(1);
+      lineWidth.setValue(1);
+      const t = setTimeout(stableDone, 800);
+      return () => clearTimeout(t);
+    }
     const animations = Animated.sequence([
       Animated.parallel([
         Animated.spring(logoScale, {
@@ -67,7 +82,7 @@ export default function IntroScreen({ onDone: rawOnDone }: { onDone: () => void 
       animations.stop();
       clearTimeout(safety);
     };
-  }, [stableDone, logoScale, logoOpacity, titleOpacity, titleTranslate, taglineOpacity, lineWidth, fadeOut]);
+  }, [reduceMotion, stableDone, logoScale, logoOpacity, titleOpacity, titleTranslate, taglineOpacity, lineWidth, fadeOut]);
 
   return (
     <Animated.View style={[styles.flex, { opacity: fadeOut, backgroundColor: theme.colors.background }]}>
