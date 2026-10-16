@@ -22,6 +22,7 @@ import {
   AsyncStorageTrackerRepo,
 } from '../src/db/repos-web';
 import { templateFromEntries } from '../src/db/meal-template-repo-types';
+import { localDayKey } from '../src/utils';
 import type { Entry, MealTemplate } from '../src/types';
 
 beforeEach(() => store.clear());
@@ -54,15 +55,38 @@ describe('AsyncStorageEntryRepo', () => {
     expect(await repo.listByDate('2026-09-23')).toEqual([]);
   });
 
+  // Both of these are built from local wall-clock times and then stored as UTC,
+  // so they hold in every timezone: the day a log belongs to is the user's.
+  it('files a late-evening entry under its own local day', async () => {
+    const repo = new AsyncStorageEntryRepo();
+    await repo.create(food({ title: 'late', loggedAt: new Date(2026, 8, 22, 23, 30).toISOString() }));
+    await repo.create(food({ title: 'early', loggedAt: new Date(2026, 8, 23, 0, 30).toISOString() }));
+
+    expect((await repo.listByDate('2026-09-22')).map((e) => e.title)).toEqual(['late']);
+    expect((await repo.listByDate('2026-09-23')).map((e) => e.title)).toEqual(['early']);
+  });
+
   it('listBetween includes both bounds', async () => {
     const repo = new AsyncStorageEntryRepo();
-    await repo.create(food({ title: 'before', loggedAt: '2026-09-19T00:00:00.000Z' }));
-    await repo.create(food({ title: 'from', loggedAt: '2026-09-20T00:00:00.000Z' }));
-    await repo.create(food({ title: 'to', loggedAt: '2026-09-22T23:59:59.000Z' }));
-    await repo.create(food({ title: 'after', loggedAt: '2026-09-23T00:00:00.000Z' }));
+    // Midday UTC, so each timestamp sits inside its named local day from UTC-11
+    // through UTC+11.
+    await repo.create(food({ title: 'before', loggedAt: '2026-09-18T12:00:00.000Z' }));
+    await repo.create(food({ title: 'from', loggedAt: '2026-09-20T12:00:00.000Z' }));
+    await repo.create(food({ title: 'to', loggedAt: '2026-09-22T12:00:00.000Z' }));
+    await repo.create(food({ title: 'after', loggedAt: '2026-09-23T12:00:00.000Z' }));
 
     const range = await repo.listBetween('2026-09-20', '2026-09-22');
     expect(range.map((e) => e.title)).toEqual(['from', 'to']);
+  });
+
+  it('listBetween covers the local days it names, edge to edge', async () => {
+    const repo = new AsyncStorageEntryRepo();
+    await repo.create(food({ title: 'first minute', loggedAt: new Date(2026, 8, 20, 0, 1).toISOString() }));
+    await repo.create(food({ title: 'last minute', loggedAt: new Date(2026, 8, 22, 23, 59).toISOString() }));
+    await repo.create(food({ title: 'day after', loggedAt: new Date(2026, 8, 23, 0, 1).toISOString() }));
+
+    const range = await repo.listBetween('2026-09-20', '2026-09-22');
+    expect(range.map((e) => e.title)).toEqual(['first minute', 'last minute']);
   });
 
   it('patches an existing entry and returns null for a missing id', async () => {
@@ -84,10 +108,8 @@ describe('AsyncStorageEntryRepo', () => {
     expect(await repo.get(b.id)).toBeNull();
 
     await repo.removeMany([a.id, c.id]);
-    expect(await repo.listByDate(dateOf(a.loggedAt))).toEqual([]);
+    expect(await repo.listByDate(localDayKey(a.loggedAt))).toEqual([]);
   });
-
-  const dateOf = (iso: string) => iso.slice(0, 10);
 });
 
 describe('AsyncStorageTrackerRepo', () => {

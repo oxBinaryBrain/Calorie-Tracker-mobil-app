@@ -23,6 +23,43 @@ export function monthKeyOf(key: string): string {
   return `${key.slice(0, 4)}-${key.slice(5, 7)}-01`;
 }
 
+/** Last day of the month containing a YYYY-MM-DD key. */
+export function monthEndKey(key: string): string {
+  const year = Number(key.slice(0, 4));
+  const month = Number(key.slice(5, 7));
+  // Day 0 of the next month is the last day of this one, leap years included.
+  return dateKey(new Date(year, month, 0));
+}
+
+/** Monday of the week containing the anchor, as YYYY-MM-DD. */
+export function weekStartKey(anchor: Date = new Date()): string {
+  const d = new Date(anchor);
+  const dow = (d.getDay() + 6) % 7; // Monday = 0
+  d.setDate(d.getDate() - dow);
+  return dateKey(d);
+}
+
+/**
+ * Local calendar day of a stored ISO timestamp. Entries keep `loggedAt` in
+ * UTC, so slicing the string would file anything logged in the evening or
+ * small hours under the neighbouring day for most of the world.
+ */
+export function localDayKey(iso: string): string {
+  return dateKey(new Date(iso));
+}
+
+/**
+ * The UTC window that covers one local calendar day, as ISO strings. Entries
+ * store `loggedAt` in UTC, so a day has to be compared as a window rather than
+ * as a date prefix.
+ */
+export function dayBoundsIso(date: string): { fromIso: string; toIso: string } {
+  return {
+    fromIso: dateFromKey(date).toISOString(),
+    toIso: dateFromKey(addDays(date, 1)).toISOString(),
+  };
+}
+
 export function formatDateLong(key: string): string {
   return dateFromKey(key).toLocaleDateString(undefined, {
     weekday: 'long',

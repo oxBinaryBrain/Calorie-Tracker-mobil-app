@@ -6,12 +6,10 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { TrackersTabParams } from '../../navigation/types';
 import type { SleepQuality } from '../../types';
-import { useDayTracker, useTrackerRange, useAddWater, useProfile } from '../../hooks/queries';
+import { useDayTracker, useTrackerRange } from '../../hooks/queries';
+import { useWaterDay } from '../../hooks/useWaterDay';
 import { dateKey, formatMl } from '../../utils';
 import { fontFamilies, semantic } from '../../theme';
-import { effectiveWaterGoalMl } from '../../services/targets';
-import { tickLight } from '../../services/haptics';
-import { usePrefs } from '../../stores';
 import { LargeTitleScreen, QuickChip } from '../../components/ui';
 
 type Props = NativeStackScreenProps<TrackersTabParams, 'Trackers'>;
@@ -34,10 +32,7 @@ export default function TrackersScreen({ navigation }: Props) {
   const qc = useQueryClient();
   const today = dateKey();
   const tracker = useDayTracker(today);
-  const addWater = useAddWater();
-  const profile = useProfile();
-  const waterGoalPref = usePrefs((s) => s.waterGoalMl);
-  const goalMl = effectiveWaterGoalMl(waterGoalPref, profile.data?.weightKg, profile.data?.activityLevel);
+  const water = useWaterDay(today);
   const { from, to } = monthBounds(today);
   const month = useTrackerRange(from, to);
   const t = tracker.data;
@@ -52,9 +47,7 @@ export default function TrackersScreen({ navigation }: Props) {
   }, [qc]);
 
   // Water progress for today against the personalized goal.
-  const waterMl = t?.waterMl ?? 0;
-  const waterPct = Math.min(100, Math.round((waterMl / goalMl) * 100));
-  const waterLeftMl = Math.max(0, goalMl - waterMl);
+  const { goalMl, loggedMl: waterMl, percent: waterPct, leftMl: waterLeftMl, met } = water;
 
   // Last weighed-in value and its change since the previous weighing.
   const weighIns = (month.data ?? [])
@@ -63,11 +56,6 @@ export default function TrackersScreen({ navigation }: Props) {
   const lastWeight = weighIns[weighIns.length - 1]?.weightKg ?? t?.weightKg;
   const prevWeight = weighIns.length >= 2 ? weighIns[weighIns.length - 2].weightKg : undefined;
   const weightDelta = lastWeight != null && prevWeight != null ? lastWeight - prevWeight : undefined;
-
-  const addWaterMl = (ml: number) => {
-    tickLight();
-    addWater.mutate({ date: today, ml });
-  };
 
   // Each tracker carries its own tint and icon colour, the same way meals and
   // macros are tinted elsewhere: the colour says which tracker you are in.
@@ -128,7 +116,7 @@ export default function TrackersScreen({ navigation }: Props) {
             <View style={styles.textWrap}>
               <Text style={[styles.title, { color: theme.colors.onSurface }]}>Water</Text>
               <Text style={[styles.value, { color: theme.colors.onSurfaceVariant }]}>
-                {waterLeftMl > 0 ? `${formatMl(waterLeftMl)} left` : 'Goal met'}
+                {met ? 'Goal met' : `${formatMl(waterLeftMl)} left`}
               </Text>
             </View>
             <MaterialCommunityIcons
@@ -151,7 +139,7 @@ export default function TrackersScreen({ navigation }: Props) {
           </Text>
           <View style={styles.chipRow}>
             {WATER_CHIPS.map((ml) => (
-              <QuickChip key={ml} label={`+${ml}`} onPress={() => addWaterMl(ml)} />
+              <QuickChip key={ml} label={`+${ml}`} onPress={() => water.add(ml)} />
             ))}
           </View>
         </Card.Content>

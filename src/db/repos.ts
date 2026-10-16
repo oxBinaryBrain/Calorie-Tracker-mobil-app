@@ -1,6 +1,6 @@
 import * as SQLite from 'expo-sqlite';
 import { Platform } from 'react-native';
-import { dateKey } from '../utils';
+import { dateKey, dayBoundsIso } from '../utils';
 import type { DayTracker, Entry, MealTemplate, Profile, UserTargets } from '../types';
 import type { EntryRepo, ProfileRepo, TargetRepo, TrackerRepo } from './repo-types';
 import type { MealTemplateRepo } from './meal-template-repo-types';
@@ -86,18 +86,24 @@ function rowToEntry(row: SQLite.SQLiteBindParams extends never ? never : any): E
 export class SqliteEntryRepo implements EntryRepo {
   async listByDate(date: string): Promise<Entry[]> {
     const database = await db();
+    // Compare against the UTC window of the local day: substr(logged_at, 1, 10)
+    // filed late-evening and early-morning logs under the neighbouring day for
+    // anyone not on UTC. This range also uses idx_entries_logged_at directly.
+    const { fromIso, toIso } = dayBoundsIso(date);
     const rows = await database.getAllAsync(
-      `SELECT * FROM entries WHERE substr(logged_at, 1, 10) = ? ORDER BY logged_at ASC`,
-      [date],
+      `SELECT * FROM entries WHERE logged_at >= ? AND logged_at < ? ORDER BY logged_at ASC`,
+      [fromIso, toIso],
     );
     return rows.map(rowToEntry);
   }
 
   async listBetween(from: string, to: string): Promise<Entry[]> {
     const database = await db();
+    const { fromIso } = dayBoundsIso(from);
+    const { toIso } = dayBoundsIso(to);
     const rows = await database.getAllAsync(
-      `SELECT * FROM entries WHERE substr(logged_at, 1, 10) >= ? AND substr(logged_at, 1, 10) <= ? ORDER BY logged_at ASC`,
-      [from, to],
+      `SELECT * FROM entries WHERE logged_at >= ? AND logged_at < ? ORDER BY logged_at ASC`,
+      [fromIso, toIso],
     );
     return rows.map(rowToEntry);
   }

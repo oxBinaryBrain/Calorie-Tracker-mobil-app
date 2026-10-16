@@ -8,8 +8,8 @@ import type { AccountTabParams } from '../../navigation/types';
 import type { ActivityLevel, Goal, Sex } from '../../types';
 import { useSession, usePrefs } from '../../stores';
 import { useProfile } from '../../hooks/queries';
+import { useWaterGoal } from '../../hooks/useWaterDay';
 import { formatMl } from '../../utils';
-import { effectiveWaterGoalMl } from '../../services/targets';
 import { fontFamilies, semantic } from '../../theme';
 import { LargeTitleScreen, PressableRow, SectionTitle } from '../../components/ui';
 
@@ -60,13 +60,12 @@ export default function AccountScreen({ navigation }: Props) {
   const email = useSession((st) => st.email);
   const signOut = useSession((st) => st.signOut);
   const simulatedPro = usePrefs((st) => st.simulatedPro);
-  const waterGoalPref = usePrefs((st) => st.waterGoalMl);
   const profile = useProfile();
   const p = profile.data;
   const firstName = (p?.displayName || '').split(' ')[0];
   const displayName = firstName || email?.split('@')[0] || 'Friend';
   const avatar = p?.avatarEmoji ?? '🌿';
-  const waterGoal = effectiveWaterGoalMl(waterGoalPref, p?.weightKg, p?.activityLevel);
+  const { goalMl: waterGoal } = useWaterGoal();
   const [refreshing, setRefreshing] = React.useState(false);
 
   const onRefresh = React.useCallback(async () => {

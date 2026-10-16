@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { dayBoundsIso } from '../utils';
 import type { DayTracker, Entry, MealTemplate, Profile, UserTargets } from '../types';
 import type { EntryRepo, ProfileRepo, TargetRepo, TrackerRepo } from './repo-types';
 import type { MealTemplateRepo } from './meal-template-repo-types';
@@ -38,14 +39,19 @@ async function writeJson(key: string, value: unknown): Promise<void> {
 
 export class AsyncStorageEntryRepo implements EntryRepo {
   async listByDate(date: string): Promise<Entry[]> {
+    const { fromIso, toIso } = dayBoundsIso(date);
     const all = await readJson<Entry[]>(KEYS.entries, []);
-    return all.filter((e) => e.loggedAt.slice(0, 10) === date).sort((a, b) => a.loggedAt.localeCompare(b.loggedAt));
+    return all
+      .filter((e) => e.loggedAt >= fromIso && e.loggedAt < toIso)
+      .sort((a, b) => a.loggedAt.localeCompare(b.loggedAt));
   }
 
   async listBetween(from: string, to: string): Promise<Entry[]> {
+    const { fromIso } = dayBoundsIso(from);
+    const { toIso } = dayBoundsIso(to);
     const all = await readJson<Entry[]>(KEYS.entries, []);
     return all
-      .filter((e) => e.loggedAt.slice(0, 10) >= from && e.loggedAt.slice(0, 10) <= to)
+      .filter((e) => e.loggedAt >= fromIso && e.loggedAt < toIso)
       .sort((a, b) => a.loggedAt.localeCompare(b.loggedAt));
   }
 

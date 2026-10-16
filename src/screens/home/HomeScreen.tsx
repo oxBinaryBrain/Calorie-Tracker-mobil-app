@@ -7,13 +7,12 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { HomeTabParams } from '../../navigation/types';
 import type { ParsedEntry } from '../../types';
 import { useQueryClient } from '@tanstack/react-query';
-import { useDayEntries, todayTotals, useTargets, useDayTracker, useAddWater, useProfile, useEntriesRange, weekRange } from '../../hooks/queries';
-import { dateKey, formatKcal, formatMl, greeting } from '../../utils';
+import { useDayEntries, todayTotals, useTargets, useDayTracker, useProfile, useEntriesRange, weekRange } from '../../hooks/queries';
+import { useWaterDay } from '../../hooks/useWaterDay';
+import { dateKey, formatKcal, formatMl, greeting, localDayKey } from '../../utils';
 import { fontFamilies, semantic } from '../../theme';
-import { effectiveWaterGoalMl } from '../../services/targets';
 import { CalorieRing, EntryList, MacroBars, EmptyState } from '../../components/ui';
 import { usingMockApi } from '../../api/client';
-import { usePrefs } from '../../stores';
 import { WeekStrip } from './parts/WeekStrip';
 import { WaterQuickAdd } from './parts/WaterQuickAdd';
 import { AgainSection } from './parts/AgainSection';
@@ -28,8 +27,7 @@ export default function HomeScreen({ navigation }: Props) {
   const targets = useTargets();
   const profile = useProfile();
   const tracker = useDayTracker(today);
-  const addWater = useAddWater();
-  const waterGoalPref = usePrefs((s) => s.waterGoalMl);
+  const water = useWaterDay(today);
   const [refreshing, setRefreshing] = React.useState(false);
   const queryClient = useQueryClient();
 
@@ -55,14 +53,14 @@ export default function HomeScreen({ navigation }: Props) {
   const weekTotals = weekDays.map((d) => ({
     date: d,
     calories: (weekEntries.data ?? [])
-      .filter((e) => e.type === 'food' && e.loggedAt.slice(0, 10) === d)
+      .filter((e) => e.type === 'food' && localDayKey(e.loggedAt) === d)
       .reduce((sum, e) => sum + e.calories, 0),
   }));
   const loggedCount = weekTotals.filter((d) => d.calories > 0).length;
   const weekTotal = weekTotals.reduce((sum, d) => sum + d.calories, 0);
 
   const insightBits: string[] = [];
-  const waterToday = tracker.data?.waterMl ?? 0;
+  const waterToday = water.loggedMl;
   if (tracker.data?.sleepHours != null) insightBits.push(`${tracker.data.sleepHours} h of sleep`);
   if (tracker.data?.weightKg != null) insightBits.push(`${tracker.data.weightKg} kg`);
   if (waterToday > 0) insightBits.push(`${formatMl(waterToday)} of water`);
@@ -77,7 +75,7 @@ export default function HomeScreen({ navigation }: Props) {
 
   const todayFood = (entries.data ?? []).filter((e) => e.type === 'food');
   const firstName = (p?.displayName || '').split(' ')[0];
-  const goalMl = effectiveWaterGoalMl(waterGoalPref, p?.weightKg, p?.activityLevel);
+  const goalMl = water.goalMl;
 
   const remainingKcal = targetKcal - totals.calories;
   const dayStrip: Array<{ icon: string; text: string }> = [
@@ -121,13 +119,14 @@ export default function HomeScreen({ navigation }: Props) {
                 {new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}
               </Text>
             </View>
-            <View
+            <Pressable
               style={[styles.bellChip, { backgroundColor: theme.colors.surface }]}
-              accessibilityElementsHidden
-              importantForAccessibility="no"
+              onPress={() => (navigation as any).getParent()?.navigate('AccountTab', { screen: 'Settings' })}
+              accessibilityRole="button"
+              accessibilityLabel="Open settings and reminders"
             >
               <MaterialCommunityIcons name="bell-outline" size={20} color={theme.colors.onSurface} />
-            </View>
+            </Pressable>
           </View>
 
           <View
@@ -231,7 +230,7 @@ export default function HomeScreen({ navigation }: Props) {
           <WaterQuickAdd
             loggedMl={waterToday}
             goalMl={goalMl}
-            onAdd={(ml) => addWater.mutate({ date: today, ml })}
+            onAdd={water.add}
           />
 
           <Pressable

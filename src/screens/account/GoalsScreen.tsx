@@ -3,8 +3,8 @@ import { StyleSheet, Text } from 'react-native';
 import { useTheme } from 'react-native-paper';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AccountTabParams } from '../../navigation/types';
-import { useTargets, useUpdateTargets, useProfile } from '../../hooks/queries';
-import { effectiveWaterGoalMl } from '../../services/targets';
+import { useTargets, useUpdateTargets } from '../../hooks/queries';
+import { useWaterGoal } from '../../hooks/useWaterDay';
 import { NumberField, PrimaryButton } from '../../components/inputs';
 import { Screen, SectionTitle } from '../../components/ui';
 import { usePrefs, useToasts } from '../../stores';
@@ -23,7 +23,6 @@ export default function GoalsScreen({ navigation }: NativeStackScreenProps<Accou
   const show = useToasts((s) => s.show);
   const targetsQuery = useTargets();
   const updateTargets = useUpdateTargets();
-  const profile = useProfile();
   const waterGoalPref = usePrefs((s) => s.waterGoalMl);
   const setWaterGoal = usePrefs((s) => s.setWaterGoal);
   const targets = targetsQuery.data;
@@ -79,7 +78,7 @@ export default function GoalsScreen({ navigation }: NativeStackScreenProps<Accou
     }
   };
 
-  const derivedWater = effectiveWaterGoalMl(undefined, profile.data?.weightKg, profile.data?.activityLevel);
+  const { autoGoalMl: derivedWater } = useWaterGoal();
 
   return (
     <Screen scroll title="Goals & targets">

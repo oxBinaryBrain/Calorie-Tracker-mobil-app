@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { Platform } from 'react-native';
 import type { Settings, ThemePref, Units } from '../types';
 import * as Notifications from '../services/notifications';
 import { storageGet, storageSet, storageDelete } from '../services/storage';
@@ -68,12 +69,24 @@ export const usePrefs = create<PrefsState>((set, get) => ({
   setReminder: async (reminderEnabled, hour) => {
     const reminderHour = hour ?? get().reminderHour;
     set({ reminderEnabled, reminderHour });
-    if (reminderEnabled) {
-      const granted = await Notifications.ensureNotificationPermission();
-      if (granted) await Notifications.scheduleDailyReminder(reminderHour);
-      else set({ reminderEnabled: false });
-    } else {
+    if (!reminderEnabled) {
       await Notifications.cancelDailyReminder();
+    } else if (Platform.OS === 'web') {
+      // The web build has no local notifications. Leaving the switch on would
+      // promise a reminder that never arrives, so it reverts with a reason.
+      set({ reminderEnabled: false });
+      useToasts.getState().show('Daily reminders are only available in the mobile app');
+    } else {
+      const granted = await Notifications.ensureNotificationPermission();
+      const scheduled = granted ? await Notifications.scheduleDailyReminder(reminderHour) : null;
+      if (!scheduled) {
+        // Refused permission, or the platform could not schedule one: say so
+        // rather than showing a reminder that does not exist.
+        set({ reminderEnabled: false });
+        useToasts.getState().show(
+          granted ? 'Could not set that reminder — try again' : 'Turn on notifications to get a daily reminder',
+        );
+      }
     }
     void persist(get());
   },

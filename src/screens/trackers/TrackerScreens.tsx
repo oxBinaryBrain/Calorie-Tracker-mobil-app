@@ -9,7 +9,7 @@ import type { TrackersTabParams } from '../../navigation/types';
 import type { SleepQuality } from '../../types';
 import { useDayTracker, useTrackerRange, useUpsertTracker, useProfile } from '../../hooks/queries';
 import { useWaterDay } from '../../hooks/useWaterDay';
-import { addDays, dateKey, formatDateLong, formatMl } from '../../utils';
+import { addDays, dateFromKey, dateKey, formatDateLong, formatMl } from '../../utils';
 import { waterGoalMet } from '../../services/targets';
 import { planWeightGoal, type WeightPoint } from '../../services/weight';
 import { QuickChip, Screen, SectionTitle, EmptyState } from '../../components/ui';
@@ -106,7 +106,7 @@ function WaterHistoryStrip({ days, goalMl, theme }: {
       style={styles.histStrip}
       accessibilityRole="image"
       accessibilityLabel={days
-        .map((d) => `${new Date(d.date).toLocaleDateString(undefined, { weekday: 'short' })}: ${formatMl(d.ml)}`)
+        .map((d) => `${dateFromKey(d.date).toLocaleDateString(undefined, { weekday: 'short' })}: ${formatMl(d.ml)}`)
         .join(', ')}
     >
       {days.map((d) => {
@@ -132,7 +132,7 @@ function WaterHistoryStrip({ days, goalMl, theme }: {
                 { color: isToday ? theme.colors.primary : theme.colors.onSurfaceVariant },
               ]}
             >
-              {new Date(d.date).toLocaleDateString(undefined, { weekday: 'narrow' })}
+              {dateFromKey(d.date).toLocaleDateString(undefined, { weekday: 'narrow' })}
             </Text>
           </View>
         );

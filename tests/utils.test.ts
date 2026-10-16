@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { addDays, clamp, dateFromKey, dateKey, formatDuration, formatGrams, formatKcal, formatMl, greeting, mealSlot, monthKeyOf, toNum } from '../src/utils';
+import { addDays, clamp, dateFromKey, dateKey, dayBoundsIso, formatDuration, formatGrams, formatKcal, formatMl, greeting, localDayKey, mealSlot, monthEndKey, monthKeyOf, toNum, weekStartKey } from '../src/utils';
 
 describe('dateKey / dateFromKey', () => {
   it('formats local time as YYYY-MM-DD with zero padding', () => {
@@ -45,6 +45,50 @@ describe('monthKeyOf', () => {
     expect(monthKeyOf('2026-09-22')).toBe('2026-09-01');
     expect(monthKeyOf('2026-12-31')).toBe('2026-12-01');
     expect(monthKeyOf('2026-01-01')).toBe('2026-01-01');
+  });
+});
+
+describe('monthEndKey', () => {
+  it('names the last day of a month, including February', () => {
+    expect(monthEndKey('2026-01-01')).toBe('2026-01-31');
+    expect(monthEndKey('2026-02-01')).toBe('2026-02-28');
+    expect(monthEndKey('2024-02-01')).toBe('2024-02-29');
+    expect(monthEndKey('2026-04-01')).toBe('2026-04-30');
+    expect(monthEndKey('2026-12-31')).toBe('2026-12-31');
+  });
+});
+
+describe('weekStartKey', () => {
+  it('returns the Monday of the anchor week', () => {
+    expect(weekStartKey(new Date(2026, 8, 16, 12))).toBe('2026-09-14'); // Wed
+    expect(weekStartKey(new Date(2026, 8, 20, 12))).toBe('2026-09-14'); // Sun
+    expect(weekStartKey(new Date(2026, 8, 21, 12))).toBe('2026-09-21'); // Mon
+  });
+});
+
+describe('localDayKey', () => {
+  it('reads a stored UTC timestamp as the local day it happened on', () => {
+    expect(localDayKey(new Date(2026, 8, 22, 23, 30).toISOString())).toBe('2026-09-22');
+    expect(localDayKey(new Date(2026, 8, 23, 0, 30).toISOString())).toBe('2026-09-23');
+    expect(localDayKey(new Date(2026, 8, 22, 12, 0).toISOString())).toBe('2026-09-22');
+  });
+});
+
+describe('dayBoundsIso', () => {
+  it('spans exactly the local day, midnight to midnight', () => {
+    const { fromIso, toIso } = dayBoundsIso('2026-09-22');
+    expect(fromIso).toBe(dateFromKey('2026-09-22').toISOString());
+    expect(toIso).toBe(dateFromKey('2026-09-23').toISOString());
+    expect(fromIso < toIso).toBe(true);
+  });
+
+  it('contains every local time of that day', () => {
+    const { fromIso, toIso } = dayBoundsIso('2026-09-22');
+    for (const [hour, minute] of [[0, 0], [0, 1], [12, 0], [23, 30], [23, 59]]) {
+      const iso = new Date(2026, 8, 22, hour, minute).toISOString();
+      expect(iso >= fromIso && iso < toIso).toBe(true);
+    }
+    expect(new Date(2026, 8, 23, 0, 1).toISOString() >= toIso).toBe(true);
   });
 });
 

@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { addDays, dateKey } from '../utils';
+import { addDays, localDayKey, weekStartKey } from '../utils';
 import { entryRepo, mealTemplateRepo, profileRepo, targetRepo, trackerRepo } from '../db/repos';
 import { api } from '../api/client';
 import type { DayTracker, Entry, MealTemplate, Profile, TargetEdit, UserTargets } from '../types';
@@ -34,7 +34,7 @@ export function useEntriesRange(from: string, to: string) {
 export function useLoggedDayKeys(from: string, to: string) {
   const q = useEntriesRange(from, to);
   const days = new Set<string>();
-  for (const e of q.data ?? []) days.add(e.loggedAt.slice(0, 10));
+  for (const e of q.data ?? []) days.add(localDayKey(e.loggedAt));
   return { ...q, days };
 }
 
@@ -63,7 +63,7 @@ export function useUpdateEntry() {
     onSuccess: (updated) => {
       if (!updated) return;
       void qc.invalidateQueries({ queryKey: queryKeys.entry(updated.id) });
-      void qc.invalidateQueries({ queryKey: queryKeys.entriesDay(updated.loggedAt.slice(0, 10)) });
+      void qc.invalidateQueries({ queryKey: queryKeys.entriesDay(localDayKey(updated.loggedAt)) });
     },
   });
 }
@@ -243,10 +243,7 @@ export function todayTotals(entries: Entry[] | undefined) {
 }
 
 export function weekRange(anchor = new Date()): { from: string; to: string; days: string[] } {
-  const d = new Date(anchor);
-  const dow = (d.getDay() + 6) % 7; // Monday = 0
-  d.setDate(d.getDate() - dow);
-  const from = dateKey(d);
+  const from = weekStartKey(anchor);
   const days = Array.from({ length: 7 }, (_, i) => addDays(from, i));
   return { from, to: days[6], days };
 }

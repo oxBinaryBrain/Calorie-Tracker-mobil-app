@@ -4,7 +4,6 @@ import { useTheme } from 'react-native-paper';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { formatMl } from '../../../utils';
 import { fontFamilies, semantic } from '../../../theme';
-import { tickLight } from '../../../services/haptics';
 
 /** Quick water chips against the personalized goal (inline on Home). */
 export function WaterQuickAdd({ loggedMl, goalMl, onAdd }: {
@@ -21,10 +20,7 @@ export function WaterQuickAdd({ loggedMl, goalMl, onAdd }: {
       {[250, 500].map((ml) => (
         <Pressable
           key={ml}
-          onPress={() => {
-            tickLight();
-            onAdd(ml);
-          }}
+          onPress={() => onAdd(ml)}
           accessibilityRole="button"
           accessibilityLabel={`Add ${ml} milliliters of water`}
           style={[styles.waterChip, { backgroundColor: s.waterTint }]}>

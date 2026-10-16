@@ -7,7 +7,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useEntriesRange, useTargets, useTrackerRange, useProfile, weekRange } from '../../hooks/queries';
 import { useWaterGoal } from '../../hooks/useWaterDay';
 import { waterGoalMet } from '../../services/targets';
-import { addDays, formatKcal, formatMl } from '../../utils';
+import { addDays, dateFromKey, formatKcal, formatMl, localDayKey, weekStartKey } from '../../utils';
 import { LargeTitleScreen, StatTile, SectionTitle, EmptyState } from '../../components/ui';
 import { semantic, fontFamilies } from '../../theme';
 import type { RootTabParams } from '../../navigation/types';
@@ -22,16 +22,6 @@ const TREND_WEEKS = 8;
 
 function prevWeekRange() {
   return weekRange(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000));
-}
-
-function weekStartKey(anchor: Date): string {
-  const d = new Date(anchor);
-  const dow = (d.getDay() + 6) % 7;
-  d.setDate(d.getDate() - dow);
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
 }
 
 /** Round an axis ceiling up to a clean 500-step so labels read 500/1000/1500… */
@@ -50,7 +40,6 @@ export default function WeeklySummaryScreen({ navigation }: { navigation?: Nativ
   const entries = useEntriesRange(from, to);
   const trackers = useTrackerRange(from, to);
   const prevEntries = useEntriesRange(prev.from, prev.to);
-  const prevTrackers = useTrackerRange(prev.from, prev.to);
   const targets = useTargets();
   const profile = useProfile();
   // Same goal the rings, the Water screen and Account use — never re-derived here.
@@ -75,7 +64,7 @@ export default function WeeklySummaryScreen({ navigation }: { navigation?: Nativ
     const map = new Map<string, number>();
     for (const day of days) map.set(day, 0);
     for (const e of entries.data ?? []) {
-      const k = e.loggedAt.slice(0, 10);
+      const k = localDayKey(e.loggedAt);
       if (e.type === 'food') map.set(k, (map.get(k) ?? 0) + e.calories);
     }
     return map;
@@ -92,7 +81,7 @@ export default function WeeklySummaryScreen({ navigation }: { navigation?: Nativ
   const prevByDay = React.useMemo(() => {
     const map = new Map<string, number>();
     for (const e of prevEntries.data ?? []) {
-      const k = e.loggedAt.slice(0, 10);
+      const k = localDayKey(e.loggedAt);
       if (e.type === 'food') map.set(k, (map.get(k) ?? 0) + e.calories);
     }
     return map;
@@ -102,9 +91,8 @@ export default function WeeklySummaryScreen({ navigation }: { navigation?: Nativ
   const prevLoggedDays = prevDayTotals.filter((d) => d.calories > 0);
   const prevAvgCalories = prevLoggedDays.length > 0 ? prevLoggedDays.reduce((sum, d) => sum + d.calories, 0) / prevLoggedDays.length : 0;
 
-  const prevWeights = (prevTrackers.data ?? []).filter((t) => t.weightKg != null).sort((a, b) => a.date.localeCompare(b.date));
   const thisWeights = (trackers.data ?? []).filter((t) => t.weightKg != null).sort((a, b) => a.date.localeCompare(b.date));
-  const firstWeight = thisWeights[0]?.weightKg ?? prevWeights[prevWeights.length - 1]?.weightKg ?? null;
+  const firstWeight = thisWeights[0]?.weightKg ?? null;
   const lastWeight = thisWeights[thisWeights.length - 1]?.weightKg ?? null;
   const weekWeightDelta = firstWeight != null && lastWeight != null ? lastWeight - firstWeight : null;
 
@@ -112,7 +100,9 @@ export default function WeeklySummaryScreen({ navigation }: { navigation?: Nativ
   const trendData = React.useMemo(() => {
     const bar = (d: { date: string; calories: number }, isPrev: boolean) => ({
       value: Math.round(d.calories),
-      label: new Date(d.date).toLocaleDateString(undefined, { weekday: 'narrow' }),
+      // dateFromKey: new Date("YYYY-MM-DD") parses as UTC and names the wrong
+      // weekday for anyone west of Greenwich.
+      label: dateFromKey(d.date).toLocaleDateString(undefined, { weekday: 'narrow' }),
       frontColor: isPrev ? s.chartGrid : s.ringProgress,
       spacing: isPrev && d.date === prev.to ? 16 : undefined,
     });
@@ -165,7 +155,7 @@ export default function WeeklySummaryScreen({ navigation }: { navigation?: Nativ
               : wantsHigher && capped < 0
                 ? 'Gain was fast this week — easing off keeps it sustainable.'
                 : 'Intake has drifted from your target; recent average is a steadier anchor.',
-      evidence: `${loggedDays.length + prevLoggedDays.length} logged days · ${weekWeightDelta > 0 ? '+' : ''}${weekWeightDelta.toFixed(1)} kg over two weeks`,
+      evidence: `${loggedDays.length + prevLoggedDays.length} logged days · weight ${weekWeightDelta > 0 ? '+' : ''}${weekWeightDelta.toFixed(1)} kg in this week's weigh-ins`,
     };
   }, [targetKcal, profile.data?.goal, loggedDays.length, prevLoggedDays.length, avgCalories, prevAvgCalories, weekWeightDelta]);
 
@@ -186,7 +176,7 @@ export default function WeeklySummaryScreen({ navigation }: { navigation?: Nativ
     const foodDays = new Map<string, { carbs: number; protein: number; fat: number }>();
     for (const e of entries.data ?? []) {
       if (e.type !== 'food') continue;
-      const k = e.loggedAt.slice(0, 10);
+      const k = localDayKey(e.loggedAt);
       const cur = foodDays.get(k) ?? { carbs: 0, protein: 0, fat: 0 };
       cur.carbs += e.carbs ?? 0;
       cur.protein += e.protein ?? 0;
@@ -212,7 +202,7 @@ export default function WeeklySummaryScreen({ navigation }: { navigation?: Nativ
     const kcalByDay = new Map<string, number>();
     for (const e of longEntries.data ?? []) {
       if (e.type !== 'food') continue;
-      const k = e.loggedAt.slice(0, 10);
+      const k = localDayKey(e.loggedAt);
       kcalByDay.set(k, (kcalByDay.get(k) ?? 0) + e.calories);
     }
     // Bucket days into Monday-anchored weeks from trendFrom through today.
@@ -220,13 +210,13 @@ export default function WeeklySummaryScreen({ navigation }: { navigation?: Nativ
     let cursor = trendFrom;
     let weekNo = 0;
     while (cursor <= to) {
-      const key = weekStartKey(new Date(cursor));
+      const key = weekStartKey(dateFromKey(cursor));
       if (!buckets.has(key)) {
         weekNo += 1;
         buckets.set(key, {
           sum: 0,
           logged: 0,
-          label: weekNo === TREND_WEEKS + 1 ? 'This' : new Date(key).toLocaleDateString(undefined, { month: 'numeric', day: 'numeric' }),
+          label: weekNo === TREND_WEEKS + 1 ? 'This' : dateFromKey(key).toLocaleDateString(undefined, { month: 'numeric', day: 'numeric' }),
         });
       }
       const bucket = buckets.get(key)!;
@@ -284,7 +274,7 @@ export default function WeeklySummaryScreen({ navigation }: { navigation?: Nativ
 
   const dayAxis = niceAxis(Math.max(targetKcal, ...trendData.map((d) => d.value)));
   const trendAxis = niceAxis(Math.max(targetKcal, ...weeklyTrend.map((w) => w.avg)));
-  const thisWeekKey = weekStartKey(new Date());
+  const thisWeekKey = weekStartKey();
 
   return (
     <LargeTitleScreen

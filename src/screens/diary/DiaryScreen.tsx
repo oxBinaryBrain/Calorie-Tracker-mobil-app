@@ -7,7 +7,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { DiaryTabParams } from '../../navigation/types';
 import { useEntriesRange, useTrackerRange } from '../../hooks/queries';
-import { addDays, dateKey, monthKeyOf } from '../../utils';
+import { addDays, dateFromKey, dateKey, localDayKey, monthEndKey, monthKeyOf } from '../../utils';
 import { fontFamilies } from '../../theme';
 import { usePrefs } from '../../stores';
 import { LargeTitleScreen } from '../../components/ui';
@@ -72,14 +72,15 @@ export default function DiaryScreen({ navigation }: Props) {
   }, [hydratedPrefs, savedMonth]);
 
   // Marks come from month-scoped queries — only the visible month is fetched,
-  // and each month change swaps to a fresh bounded query.
+  // and each month change swaps to a fresh bounded query. Addressed by the
+  // month's own last day, so a short month can never reach into the next one.
   const from = visibleMonth;
-  const to = addDays(visibleMonth, 31);
+  const to = monthEndKey(visibleMonth);
   const range = useEntriesRange(from, to);
   const trackerRange = useTrackerRange(from, to);
   const loggedDays = React.useMemo(() => {
     const set = new Set<string>();
-    for (const e of range.data ?? []) set.add(e.loggedAt.slice(0, 10));
+    for (const e of range.data ?? []) set.add(localDayKey(e.loggedAt));
     return set;
   }, [range.data]);
 
@@ -90,7 +91,7 @@ export default function DiaryScreen({ navigation }: Props) {
     const mealDays = new Set<string>();
     const workoutDays = new Set<string>();
     for (const e of range.data ?? []) {
-      const k = e.loggedAt.slice(0, 10);
+      const k = localDayKey(e.loggedAt);
       if (e.type === 'food') mealDays.add(k);
       else if (e.type === 'exercise') workoutDays.add(k);
     }
@@ -232,7 +233,7 @@ function RecentDays({ onOpen }: { onOpen: (date: string) => void }) {
     const kcalByDay = new Map<string, number>();
     for (const e of entries.data ?? []) {
       if (e.type !== 'food') continue;
-      const k = e.loggedAt.slice(0, 10);
+      const k = localDayKey(e.loggedAt);
       kcalByDay.set(k, (kcalByDay.get(k) ?? 0) + e.calories);
     }
     const trackerByDay = new Map((trackers.data ?? []).map((t) => [t.date, t]));
@@ -278,7 +279,7 @@ function RecentDays({ onOpen }: { onOpen: (date: string) => void }) {
           >
             <View style={styles.recentLeft}>
               <Text style={[styles.recentDate, { color: theme.colors.onSurface }]}>
-                {d.date === today ? 'Today' : new Date(d.date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
+                {d.date === today ? 'Today' : dateFromKey(d.date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
               </Text>
               <Text numberOfLines={1} style={[styles.recentDetail, { color: theme.colors.onSurfaceVariant }]}>
                 {parts(d)}

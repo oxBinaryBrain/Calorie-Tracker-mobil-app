@@ -9,7 +9,7 @@ import { usingMockApi } from '../../api/client';
 import { useDayEntries, useTargets } from '../../hooks/queries';
 import { dateKey, formatKcal } from '../../utils';
 import { ChoiceGroup } from '../../components/inputs';
-import { PressableRow, Screen, SectionTitle } from '../../components/ui';
+import { InfoRow, Screen, SectionTitle } from '../../components/ui';
 
 type Props = NativeStackScreenProps<AccountTabParams, 'Settings'>;
 
@@ -113,13 +113,8 @@ export default function SettingsScreen() {
       <Divider style={styles.divider} />
 
       <SectionTitle text="About" />
-      <PressableRow
-        label="Your data"
-        icon="database-outline"
-        value={usingMockApi ? 'On this device' : 'Synced'}
-        onPress={() => {}}
-        last
-      />
+      {/* Reads only: there is nothing behind it to open, so it is not a button. */}
+      <InfoRow label="Your data" value={usingMockApi ? 'On this device' : 'Synced'} />
       <Text style={[styles.hint, { color: theme.colors.onSurfaceVariant, marginBottom: 8 }]}>
         {usingMockApi
           ? `Mock mode — everything is stored locally. ${loggedToday > 0 ? `Today: ${loggedToday} ${loggedToday === 1 ? 'item' : 'items'} logged` : 'Nothing logged yet today'}${dailyCalories ? ` · ${formatKcal(dailyCalories)} kcal target` : ''}.`

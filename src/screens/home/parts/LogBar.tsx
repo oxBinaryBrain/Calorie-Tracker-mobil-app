@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
-import { ActivityIndicator, IconButton, TextInput, useTheme } from 'react-native-paper';
+import { ActivityIndicator, TextInput, useTheme } from 'react-native-paper';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { api } from '../../../api/client';
@@ -122,11 +122,7 @@ export function LogBar({ onParsed }: {
           blurOnSubmit
           accessibilityLabel="Describe what you ate"
         />
-        {parsing || photoBusy ? (
-          <ActivityIndicator style={styles.inputAction} />
-        ) : (
-          <IconButton icon="" size={0} style={{ display: 'none' }} />
-        )}
+        {parsing || photoBusy ? <ActivityIndicator style={styles.inputAction} /> : null}
         <Pressable
           onPress={() => void openPhotoFlow()}
           style={styles.camBtn}

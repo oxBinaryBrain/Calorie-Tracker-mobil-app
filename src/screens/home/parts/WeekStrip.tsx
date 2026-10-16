@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import type { MD3Theme } from 'react-native-paper';
-import { dateKey, formatKcal } from '../../../utils';
+import { dateFromKey, dateKey, formatKcal } from '../../../utils';
 import { fontFamilies } from '../../../theme';
 
 /** Seven slim bars, one per day — tap one to open the day in the Diary. */
@@ -16,8 +16,11 @@ export function WeekStrip({ days, theme, onOpenDay }: {
       {days.map((d) => {
         const isToday = d.date === today;
         const logged = d.calories > 0;
-        const dayNum = new Date(d.date).getDate();
-        const dow = new Date(d.date).toLocaleDateString(undefined, { weekday: 'narrow' });
+        // dateFromKey, never new Date("YYYY-MM-DD"): the latter parses as UTC
+        // midnight and names the wrong weekday west of Greenwich.
+        const day = dateFromKey(d.date);
+        const dayNum = day.getDate();
+        const dow = day.toLocaleDateString(undefined, { weekday: 'narrow' });
         return (
           <Pressable
             key={d.date}
