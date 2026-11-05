@@ -105,7 +105,7 @@ export function useUpsertTracker() {
     onError: () => {
       // Lazy import: a static import would drag expo modules into unit tests.
       void import('../stores').then(
-        (m) => m.useToasts.getState().show('Could not save that — try again'),
+        (m) => m.useToasts.getState().show('Could not save that, try again'),
         () => undefined,
       );
     },
@@ -142,7 +142,7 @@ export function useAddWater() {
       if (context?.previous) qc.setQueryData(context.key, context.previous);
       // Lazy import: a static import would drag expo modules into unit tests.
       void import('../stores').then(
-        (m) => m.useToasts.getState().show('Could not save that — try again'),
+        (m) => m.useToasts.getState().show('Could not save that, try again'),
         () => undefined,
       );
     },

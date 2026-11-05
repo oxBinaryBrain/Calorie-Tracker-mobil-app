@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { KeyboardAvoidingView, Platform, StyleSheet, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Card, IconButton, TextInput, useTheme } from 'react-native-paper';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { HomeTabParams } from '../../navigation/types';
@@ -58,7 +58,7 @@ function ItemCard({ draft, onChange, onRemove, canRemove }: {
           {canRemove ? <IconButton icon="close" onPress={onRemove} size={20} /> : null}
         </View>
 
-        <View style={styles.typeRow}>
+        <View style={styles.typeRow} accessibilityRole="radiogroup" accessibilityLabel="Entry type">
           {(['food', 'exercise'] as EntryType[]).map((t) => (
             <ChipToggle
               key={t}
@@ -78,15 +78,15 @@ function ItemCard({ draft, onChange, onRemove, canRemove }: {
         <View style={styles.numRow}>
           {isFood ? (
             <>
-              <MiniField label="g" value={draft.grams} onChangeText={(v) => set({ grams: v })} />
-              <MiniField label="kcal" value={draft.calories} onChangeText={(v) => set({ calories: v ?? 0 })} />
-              <MiniField label="Carbs" value={draft.carbs} onChangeText={(v) => set({ carbs: v })} />
-              <MiniField label="Protein" value={draft.protein} onChangeText={(v) => set({ protein: v })} />
-              <MiniField label="Fat" value={draft.fat} onChangeText={(v) => set({ fat: v })} />
+              <MiniField label="g" accessibilityLabel="Grams" value={draft.grams} onChangeText={(v) => set({ grams: v })} />
+              <MiniField label="kcal" accessibilityLabel="Calories" value={draft.calories} onChangeText={(v) => set({ calories: v ?? 0 })} />
+              <MiniField label="Carbs" accessibilityLabel="Carbs in grams" value={draft.carbs} onChangeText={(v) => set({ carbs: v })} />
+              <MiniField label="Protein" accessibilityLabel="Protein in grams" value={draft.protein} onChangeText={(v) => set({ protein: v })} />
+              <MiniField label="Fat" accessibilityLabel="Fat in grams" value={draft.fat} onChangeText={(v) => set({ fat: v })} />
             </>
           ) : (
             <>
-              <MiniField label="kcal burned" value={draft.caloriesBurned} onChangeText={(v) => set({ caloriesBurned: v })} wide />
+              <MiniField label="kcal burned" accessibilityLabel="Calories burned" value={draft.caloriesBurned} onChangeText={(v) => set({ caloriesBurned: v })} wide />
             </>
           )}
         </View>
@@ -109,24 +109,35 @@ function ItemCard({ draft, onChange, onRemove, canRemove }: {
 
 function ChipToggle({ selected, label, onPress }: { selected: boolean; label: string; onPress: () => void }) {
   const theme = useTheme();
+  // A real control, not just styled text: assistive tech needs the role and
+  // which of the two options is chosen. They are a two-option radio group.
   return (
-    <Text
+    <Pressable
       onPress={onPress}
+      accessibilityRole="radio"
+      aria-checked={selected}
+      accessibilityLabel={label}
+      hitSlop={6}
       style={[
         styles.chipToggle,
-        {
-          color: selected ? theme.colors.onPrimary : theme.colors.onSurfaceVariant,
-          backgroundColor: selected ? theme.colors.primary : theme.colors.surfaceVariant,
-        },
+        { backgroundColor: selected ? theme.colors.primary : theme.colors.surfaceVariant },
       ]}
     >
-      {label}
-    </Text>
+      <Text
+        style={{
+          fontSize: 12.5,
+          color: selected ? theme.colors.onPrimary : theme.colors.onSurfaceVariant,
+        }}
+      >
+        {label}
+      </Text>
+    </Pressable>
   );
 }
 
-function MiniField({ label, value, onChangeText, wide }: {
+function MiniField({ label, accessibilityLabel, value, onChangeText, wide }: {
   label: string;
+  accessibilityLabel: string;
   value: number | null | undefined;
   onChangeText: (v: number | null) => void;
   wide?: boolean;
@@ -153,6 +164,7 @@ function MiniField({ label, value, onChangeText, wide }: {
         mode="outlined"
         dense
         style={styles.miniInput}
+        accessibilityLabel={accessibilityLabel}
       />
     </View>
   );
@@ -198,7 +210,7 @@ export default function EntryConfirmScreen({ navigation, route }: Props) {
       show(items.length === 1 ? 'Entry saved' : `${items.length} entries saved`);
       navigation.popToTop();
     } catch {
-      show('Could not save — try again');
+      show('Could not save, try again');
     }
   };
 
@@ -258,7 +270,6 @@ const styles = StyleSheet.create({
   titleInput: { flex: 1, backgroundColor: 'transparent', fontSize: 16, fontWeight: '600' },
   typeRow: { flexDirection: 'row', gap: 8 },
   chipToggle: {
-    fontSize: 12.5,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 999,

@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { Card, useTheme } from 'react-native-paper';
 import { useQueryClient } from '@tanstack/react-query';
 import { BarChart } from 'react-native-gifted-charts';
@@ -7,8 +7,9 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useEntriesRange, useTargets, useTrackerRange, useProfile, weekRange } from '../../hooks/queries';
 import { useWaterGoal } from '../../hooks/useWaterDay';
 import { waterGoalMet } from '../../services/targets';
-import { addDays, dateFromKey, formatKcal, formatMl, localDayKey, weekStartKey } from '../../utils';
+import { addDays, dateFromKey, formatKcal, formatMl, localDayKey, pluralCount, weekStartKey } from '../../utils';
 import { LargeTitleScreen, StatTile, SectionTitle, EmptyState } from '../../components/ui';
+import { NUM } from '../../components/ui/styles';
 import { semantic, fontFamilies } from '../../theme';
 import type { RootTabParams } from '../../navigation/types';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -155,7 +156,7 @@ export default function WeeklySummaryScreen({ navigation }: { navigation?: Nativ
               : wantsHigher && capped < 0
                 ? 'Gain was fast this week — easing off keeps it sustainable.'
                 : 'Intake has drifted from your target; recent average is a steadier anchor.',
-      evidence: `${loggedDays.length + prevLoggedDays.length} logged days · weight ${weekWeightDelta > 0 ? '+' : ''}${weekWeightDelta.toFixed(1)} kg in this week's weigh-ins`,
+      evidence: `${pluralCount(loggedDays.length + prevLoggedDays.length, 'logged day', 'logged days')} · weight ${weekWeightDelta > 0 ? '+' : ''}${weekWeightDelta.toFixed(1)} kg in this week's weigh-ins`,
     };
   }, [targetKcal, profile.data?.goal, loggedDays.length, prevLoggedDays.length, avgCalories, prevAvgCalories, weekWeightDelta]);
 
@@ -260,13 +261,13 @@ export default function WeeklySummaryScreen({ navigation }: { navigation?: Nativ
     if (loggedDays.length >= MIN_LOGGED_DAYS && daysOnTarget < Math.ceil(loggedDays.length / 2) && targetKcal) {
       out.push({
         title: 'Anchor one meal to your target',
-        detail: `${daysOnTarget} of ${loggedDays.length} logged days landed within 10% of ${formatKcal(targetKcal)} kcal. Steadying one regular meal is often the easiest lever.`,
+        detail: `${daysOnTarget} of ${pluralCount(loggedDays.length, 'logged day', 'logged days')} landed within 10% of ${formatKcal(targetKcal)} kcal. Steadying one regular meal is often the easiest lever.`,
       });
     }
     if (waterLoggedDays > 0 && waterLoggedDays < loggedDays.length) {
       out.push({
         title: 'Note water on more days',
-        detail: `Water was recorded on ${waterLoggedDays} of ${loggedDays.length} logged days this week.`,
+        detail: `Water was recorded on ${waterLoggedDays} of ${pluralCount(loggedDays.length, 'logged day', 'logged days')} this week.`,
       });
     }
     return out.slice(0, 3);
@@ -275,6 +276,18 @@ export default function WeeklySummaryScreen({ navigation }: { navigation?: Nativ
   const dayAxis = niceAxis(Math.max(targetKcal, ...trendData.map((d) => d.value)));
   const trendAxis = niceAxis(Math.max(targetKcal, ...weeklyTrend.map((w) => w.avg)));
   const thisWeekKey = weekStartKey();
+
+  // Both charts used a fixed 300px plot, which ran past the card and off a
+  // 360pt phone. Budget the screen and card padding, the y-axis labels and the
+  // library's own margin. The day chart with its target line draws wider than
+  // its plot width, so it gets the larger allowance.
+  const { width: viewportWidth } = useWindowDimensions();
+  const chartWidth = Math.max(180, Math.min(viewportWidth - 96, 520));
+  const dayChartWidth = Math.max(160, Math.min(viewportWidth - 137, 470));
+  // Fourteen day bars with fixed bar and gap widths set the chart's real width;
+  // the plot width alone does not shrink them. Fit them to the space available.
+  const dayBarSpacing = 6;
+  const dayBarWidth = Math.max(5, Math.floor((dayChartWidth - 13 * dayBarSpacing) / 14));
 
   return (
     <LargeTitleScreen
@@ -293,7 +306,7 @@ export default function WeeklySummaryScreen({ navigation }: { navigation?: Nativ
         accessibilityRole="text"
         accessibilityLabel={
           loggedDays.length
-            ? `Weekly average ${formatKcal(avgCalories)} kcal across ${loggedDays.length} logged days`
+            ? `Weekly average ${formatKcal(avgCalories)} kcal across ${pluralCount(loggedDays.length, 'logged day', 'logged days')}`
             : 'No days logged this week yet'
         }
       >
@@ -305,7 +318,9 @@ export default function WeeklySummaryScreen({ navigation }: { navigation?: Nativ
           {[
             targetKcal > 0 ? `target ${formatKcal(targetKcal)}` : null,
             loggedDays.length > 0 ? `${loggedDays.length} of 7 days logged` : 'nothing logged yet',
-            targetKcal > 0 && loggedDays.length > 0 ? `${daysOnTarget} near target` : null,
+            targetKcal > 0 && loggedDays.length > 0
+              ? `${daysOnTarget} ${daysOnTarget === 1 ? 'day' : 'days'} near target`
+              : null,
             burned > 0 ? `${formatKcal(burned)} burned` : null,
           ]
             .filter((b): b is string => b != null)
@@ -318,10 +333,10 @@ export default function WeeklySummaryScreen({ navigation }: { navigation?: Nativ
           >
             <BarChart
               data={trendData}
-              width={300}
+              width={dayChartWidth}
               height={150}
-              barWidth={13}
-              spacing={8}
+              barWidth={dayBarWidth}
+              spacing={dayBarSpacing}
               roundedTop
               noOfSections={dayAxis.noOfSections}
               maxValue={dayAxis.maxValue}
@@ -448,7 +463,7 @@ export default function WeeklySummaryScreen({ navigation }: { navigation?: Nativ
                   label: w.label,
                   frontColor: w.key === thisWeekKey ? s.ringProgress : s.chartGrid,
                 }))}
-                width={300}
+                width={chartWidth}
                 height={160}
                 barWidth={18}
                 spacing={10}
@@ -562,8 +577,8 @@ const styles = StyleSheet.create({
   chartNote: { fontSize: 12, textAlign: 'center', marginTop: 6 },
   heroCard: { borderRadius: 22, marginTop: 10, paddingHorizontal: 16, paddingTop: 14, paddingBottom: 12, alignItems: 'center', gap: 2 },
   heroEyebrow: { fontSize: 11, letterSpacing: 1.2, fontFamily: fontFamilies.semibold, textTransform: 'uppercase' },
-  heroValue: { fontSize: 30, letterSpacing: -0.5, fontFamily: fontFamilies.semibold },
-  heroMeta: { fontSize: 12.5, textAlign: 'center', marginBottom: 10, fontFamily: fontFamilies.regular },
+  heroValue: { fontSize: 30, letterSpacing: -0.5, fontFamily: fontFamilies.semibold, ...NUM },
+  heroMeta: { fontSize: 12.5, textAlign: 'center', marginBottom: 10, fontFamily: fontFamilies.regular, ...NUM },
   legendDash: { backgroundColor: 'transparent', borderWidth: 1, borderStyle: 'dashed' },
   solutionCard: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, borderRadius: 16, padding: 14, marginBottom: 8 },
   solutionIcon: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },

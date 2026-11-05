@@ -6,7 +6,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AccountTabParams } from '../../navigation/types';
 import type { ActivityLevel, Goal, Profile, Sex } from '../../types';
 import { useProfile, useSetProfile } from '../../hooks/queries';
-import { ChoiceGroup, PrimaryButton } from '../../components/inputs';
+import { ChoiceGroup, NumberField, PrimaryButton } from '../../components/inputs';
 import { Screen, SectionTitle } from '../../components/ui';
 import { useToasts } from '../../stores';
 
@@ -100,22 +100,26 @@ export default function ProfileScreen({ navigation }: NativeStackScreenProps<Acc
       displayName: v.displayName?.trim() || undefined,
       avatarEmoji: avatarValue,
     };
-    await setProfile.mutateAsync(profile);
-    show('Profile saved');
-    navigation.goBack();
+    try {
+      await setProfile.mutateAsync(profile);
+      show('Profile saved');
+      navigation.goBack();
+    } catch {
+      show('Could not save your profile, try again');
+    }
   });
 
   return (
     <Screen scroll title="Profile">
 
       <SectionTitle text="Avatar" />
-      <View style={styles.avatars}>
+      <View style={styles.avatars} accessibilityRole="radiogroup" accessibilityLabel="Avatar">
         {AVATARS.map((a) => (
           <Pressable
             key={a}
             onPress={() => setAvatarValue(a)}
             accessibilityRole="radio"
-            accessibilityState={{ selected: a === avatarValue }}
+            aria-checked={a === avatarValue}
             accessibilityLabel={`Avatar ${a}`}
             style={[
               styles.avatarOption,
@@ -145,53 +149,31 @@ export default function ProfileScreen({ navigation }: NativeStackScreenProps<Acc
       />
 
       <SectionTitle text="Body" />
+      {/* NumberField keeps the raw text while typing, so a decimal point is
+          not swallowed and appended to the next digit. */}
       <View style={styles.row}>
-        <Controller control={control} name="heightCm" render={({ field: { onChange, value } }) => (
-          <TextInput
-            label="Height (cm)"
-            mode="outlined"
-            keyboardType="decimal-pad"
-            value={value != null ? String(value) : ''}
-            onChangeText={(t) => onChange(t === '' ? undefined : Number(t.replace(',', '.')))}
-            style={styles.field}
-            accessibilityLabel="Height in centimeters"
-          />
-        )} />
-        <Controller control={control} name="weightKg" render={({ field: { onChange, value } }) => (
-          <TextInput
-            label="Weight (kg)"
-            mode="outlined"
-            keyboardType="decimal-pad"
-            value={value != null ? String(value) : ''}
-            onChangeText={(t) => onChange(t === '' ? undefined : Number(t.replace(',', '.')))}
-            style={styles.field}
-            accessibilityLabel="Weight in kilograms"
-          />
-        )} />
+        <View style={styles.field}>
+          <Controller control={control} name="heightCm" render={({ field: { onChange, value } }) => (
+            <NumberField label="Height" suffix="cm" value={value} onChange={onChange} />
+          )} />
+        </View>
+        <View style={styles.field}>
+          <Controller control={control} name="weightKg" render={({ field: { onChange, value } }) => (
+            <NumberField label="Weight" suffix="kg" value={value} onChange={onChange} />
+          )} />
+        </View>
       </View>
       <View style={styles.row}>
-        <Controller control={control} name="age" render={({ field: { onChange, value } }) => (
-          <TextInput
-            label="Age"
-            mode="outlined"
-            keyboardType="decimal-pad"
-            value={value != null ? String(value) : ''}
-            onChangeText={(t) => onChange(t === '' ? undefined : Number(t.replace(',', '.')))}
-            style={styles.field}
-            accessibilityLabel="Age in years"
-          />
-        )} />
-        <Controller control={control} name="targetWeightKg" render={({ field: { onChange, value } }) => (
-          <TextInput
-            label="Target kg (optional)"
-            mode="outlined"
-            keyboardType="decimal-pad"
-            value={value != null ? String(value) : ''}
-            onChangeText={(t) => onChange(t === '' ? undefined : Number(t.replace(',', '.')))}
-            style={styles.field}
-            accessibilityLabel="Target weight in kilograms, optional"
-          />
-        )} />
+        <View style={styles.field}>
+          <Controller control={control} name="age" render={({ field: { onChange, value } }) => (
+            <NumberField label="Age" value={value} onChange={onChange} />
+          )} />
+        </View>
+        <View style={styles.field}>
+          <Controller control={control} name="targetWeightKg" render={({ field: { onChange, value } }) => (
+            <NumberField label="Target weight" suffix="kg" placeholder="Optional" value={value} onChange={onChange} />
+          )} />
+        </View>
       </View>
 
       <Controller control={control} name="sex" render={({ field: { onChange, value } }) => (

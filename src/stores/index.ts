@@ -14,6 +14,8 @@ type PrefsState = {
   /** User-set daily water goal (ml). null = derive from profile weight/activity. */
   waterGoalMl: number | null;
   simulatedPro: boolean;
+  /** Which Pro plan is active, or null when free or unknown (a restore). */
+  proPlanId: string | null;
   hydrated: boolean;
   setUnits: (u: Units) => void;
   setTheme: (t: ThemePref) => void;
@@ -22,6 +24,7 @@ type PrefsState = {
   setReminder: (enabled: boolean, hour?: number) => Promise<void>;
   setWaterGoal: (ml: number | null) => void;
   setSimulatedPro: (pro: boolean) => void;
+  setProPlan: (planId: string | null) => void;
   hydrate: () => void;
 };
 
@@ -37,7 +40,7 @@ const DEV_FULL_ACCESS = true;
 /**
  * Preferences persist through the shared storage abstraction as one JSON blob.
  */
-async function persist(state: Pick<PrefsState, 'units' | 'theme' | 'calendarMonth' | 'reminderEnabled' | 'reminderHour' | 'waterGoalMl' | 'simulatedPro'>) {
+async function persist(state: Pick<PrefsState, 'units' | 'theme' | 'calendarMonth' | 'reminderEnabled' | 'reminderHour' | 'waterGoalMl' | 'simulatedPro' | 'proPlanId'>) {
   try {
     await storageSet(STORAGE_KEY, JSON.stringify(state));
   } catch {
@@ -53,6 +56,7 @@ export const usePrefs = create<PrefsState>((set, get) => ({
   reminderHour: 20,
   waterGoalMl: null,
   simulatedPro: DEV_FULL_ACCESS,
+  proPlanId: null,
   hydrated: false,
   setUnits: (units) => {
     set({ units });
@@ -84,7 +88,7 @@ export const usePrefs = create<PrefsState>((set, get) => ({
         // rather than showing a reminder that does not exist.
         set({ reminderEnabled: false });
         useToasts.getState().show(
-          granted ? 'Could not set that reminder — try again' : 'Turn on notifications to get a daily reminder',
+          granted ? 'Could not set that reminder, try again' : 'Turn on notifications to get a daily reminder',
         );
       }
     }
@@ -96,6 +100,10 @@ export const usePrefs = create<PrefsState>((set, get) => ({
   },
   setSimulatedPro: (simulatedPro) => {
     set({ simulatedPro });
+    void persist(get());
+  },
+  setProPlan: (proPlanId) => {
+    set({ proPlanId });
     void persist(get());
   },
   hydrate: () => {
@@ -114,6 +122,7 @@ export const usePrefs = create<PrefsState>((set, get) => ({
             reminderHour: parsed.reminderHour ?? 20,
             waterGoalMl: typeof parsed.waterGoalMl === 'number' && parsed.waterGoalMl > 0 ? parsed.waterGoalMl : null,
             simulatedPro: DEV_FULL_ACCESS ? true : (parsed.simulatedPro ?? false),
+            proPlanId: typeof parsed.proPlanId === 'string' ? parsed.proPlanId : null,
           });
         }
       } catch {

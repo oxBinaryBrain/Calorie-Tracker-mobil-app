@@ -74,7 +74,9 @@ export default function GoalsScreen({ navigation }: NativeStackScreenProps<Accou
       show('Targets updated');
       navigation.goBack();
     } catch {
-      show('Targets saved on this device; the server was unreachable');
+      // The water goal was persisted above, but the calorie and macro targets
+      // were not — do not claim a save that did not happen.
+      show('Water goal saved. Targets could not be saved, try again');
     }
   };
 

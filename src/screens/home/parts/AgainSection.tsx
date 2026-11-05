@@ -60,7 +60,7 @@ export function AgainSection({ todayFood }: { todayFood: Entry[] }) {
           : `${yesterdayFood.length} items added to today`,
       );
     } catch {
-      show('Could not copy yesterday \u2014 try again');
+      show('Could not copy yesterday, try again');
     }
   }, [saveEntries, yesterdayFood, show, userId]);
 
@@ -77,7 +77,7 @@ export function AgainSection({ todayFood }: { todayFood: Entry[] }) {
       );
       show(`\u201C${tpl.name}\u201D added to today`);
     } catch {
-      show('Could not add that \u2014 try again');
+      show('Could not add that, try again');
     }
   }, [saveEntries, show, userId]);
 
@@ -111,7 +111,7 @@ export function AgainSection({ todayFood }: { todayFood: Entry[] }) {
       setNamingToday(false);
       setTemplateName('');
     } catch {
-      show('Could not save that \u2014 try again');
+      show('Could not save that, try again');
     }
   }, [templateName, todayFood, saveTemplate, show]);
 
@@ -124,8 +124,7 @@ export function AgainSection({ todayFood }: { todayFood: Entry[] }) {
       {todayFood.length > 0 && !namingToday ? (
         <Pressable
           onPress={() => setNamingToday(true)}
-          style={styles.saveTplRow}
-          hitSlop={6}
+          style={({ pressed }) => [styles.saveTplRow, pressed && { opacity: 0.6 }]}
           accessibilityRole="button"
           accessibilityLabel="Save today's meals as a template"
         >
@@ -173,7 +172,7 @@ export function AgainSection({ todayFood }: { todayFood: Entry[] }) {
             {hasTemplates ? (
               <Pressable
                 onPress={() => setEditingTemplates((v) => !v)}
-                hitSlop={6}
+                style={({ pressed }) => [styles.againEditBtn, pressed && { opacity: 0.6 }]}
                 accessibilityRole="button"
                 accessibilityLabel={editingTemplates ? 'Done editing templates' : 'Edit templates'}
               >
@@ -258,6 +257,7 @@ const styles = StyleSheet.create({
   againHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, paddingHorizontal: 2 },
   againTitle: { fontSize: 13, fontWeight: '600', letterSpacing: 0.3, fontFamily: fontFamilies.semibold },
   againEdit: { fontSize: 13, fontFamily: fontFamilies.medium },
+  againEditBtn: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 12, marginRight: -12 },
   againCard: { borderRadius: 16, overflow: 'hidden', borderWidth: StyleSheet.hairlineWidth },
   againRow: {
     flexDirection: 'row',
@@ -270,7 +270,7 @@ const styles = StyleSheet.create({
   againRowTitle: { fontSize: 14.5, fontFamily: fontFamilies.medium },
   againRowDetail: { fontSize: 12.5, fontFamily: fontFamilies.regular },
   againChevron: { fontSize: 20 },
-  saveTplRow: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 16, marginTop: 8 },
+  saveTplRow: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 16, marginTop: 4, minHeight: 44 },
   saveTplText: { fontSize: 13, fontFamily: fontFamilies.medium },
   namingCard: {
     marginHorizontal: 16,
@@ -282,7 +282,7 @@ const styles = StyleSheet.create({
   },
   namingTitle: { fontSize: 13.5 },
   namingRow: { flexDirection: 'row', gap: 8, alignItems: 'center' },
-  namingInput: { flex: 1, backgroundColor: 'transparent', fontSize: 14 },
-  namingSave: { paddingHorizontal: 18, paddingVertical: 10, borderRadius: 12, alignItems: 'center' },
+  namingInput: { flex: 1, backgroundColor: 'transparent', fontSize: 14, borderRadius: 12 },
+  namingSave: { paddingHorizontal: 18, minHeight: 44, justifyContent: 'center', borderRadius: 999, alignItems: 'center' },
   namingSaveText: { fontSize: 14, fontWeight: '600' },
 });

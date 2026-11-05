@@ -215,11 +215,34 @@ function MainTabs() {
         tabBarButton: (props) => <TabBarButton {...props} />,
       })}
     >
-      <Tabs.Screen name="HomeTab" component={HomeStackNavigator} options={{ title: 'Home' }} />
-      <Tabs.Screen name="DiaryTab" component={DiaryStackNavigator} options={{ title: 'Diary' }} />
-      <Tabs.Screen name="TrackersTab" component={TrackersStackNavigator} options={{ title: 'Trackers' }} />
-      <Tabs.Screen name="SummaryTab" component={SummaryStackNavigator} options={{ title: 'Summary' }} />
-      <Tabs.Screen name="AccountTab" component={AccountStackNavigator} options={{ title: 'Account' }} />
+      {/* Explicit labels: without them the accessible name is the icon glyph
+          plus the label text, so screen readers announce private-use
+          characters before the tab's name. */}
+      <Tabs.Screen
+        name="HomeTab"
+        component={HomeStackNavigator}
+        options={{ title: 'Home', tabBarAccessibilityLabel: 'Home' }}
+      />
+      <Tabs.Screen
+        name="DiaryTab"
+        component={DiaryStackNavigator}
+        options={{ title: 'Diary', tabBarAccessibilityLabel: 'Diary' }}
+      />
+      <Tabs.Screen
+        name="TrackersTab"
+        component={TrackersStackNavigator}
+        options={{ title: 'Trackers', tabBarAccessibilityLabel: 'Trackers' }}
+      />
+      <Tabs.Screen
+        name="SummaryTab"
+        component={SummaryStackNavigator}
+        options={{ title: 'Summary', tabBarAccessibilityLabel: 'Summary' }}
+      />
+      <Tabs.Screen
+        name="AccountTab"
+        component={AccountStackNavigator}
+        options={{ title: 'Account', tabBarAccessibilityLabel: 'Account' }}
+      />
     </Tabs.Navigator>
   );
 }

@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import type { MD3Theme } from 'react-native-paper';
 import { dateFromKey, dateKey, formatKcal } from '../../../utils';
 import { fontFamilies } from '../../../theme';
+import { NUM } from '../../../components/ui/styles';
 
 /** Seven slim bars, one per day — tap one to open the day in the Diary. */
 export function WeekStrip({ days, theme, onOpenDay }: {
@@ -21,13 +22,14 @@ export function WeekStrip({ days, theme, onOpenDay }: {
         const day = dateFromKey(d.date);
         const dayNum = day.getDate();
         const dow = day.toLocaleDateString(undefined, { weekday: 'narrow' });
+        const spoken = day.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
         return (
           <Pressable
             key={d.date}
             onPress={() => onOpenDay(d.date)}
             accessibilityRole="tab"
-            accessibilityState={{ selected: isToday }}
-            accessibilityLabel={`Open ${d.date} in Diary, ${formatKcal(d.calories)} calories`}
+            aria-selected={isToday}
+            accessibilityLabel={`Open ${spoken}${isToday ? ' (today)' : ''} in Diary, ${formatKcal(d.calories)} kcal`}
             style={({ pressed }) => [
               styles.weekDayCol,
               isToday && { backgroundColor: theme.colors.primaryContainer, borderRadius: 999, paddingVertical: 6 },
@@ -55,6 +57,6 @@ const styles = StyleSheet.create({
   weekStrip: { flexDirection: 'row', alignItems: 'center' },
   weekDayCol: { flex: 1, alignItems: 'center', gap: 3 },
   weekDayDow: { fontSize: 12, fontFamily: fontFamilies.regular },
-  weekDayNum: { fontSize: 14.5, fontFamily: fontFamilies.semibold },
+  weekDayNum: { fontSize: 14.5, fontFamily: fontFamilies.semibold, ...NUM },
   weekDot: { width: 5, height: 5, borderRadius: 2.5 },
 });

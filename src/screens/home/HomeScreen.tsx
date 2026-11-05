@@ -12,6 +12,7 @@ import { useWaterDay } from '../../hooks/useWaterDay';
 import { dateKey, formatKcal, formatMl, greeting, localDayKey } from '../../utils';
 import { fontFamilies, semantic } from '../../theme';
 import { CalorieRing, EntryList, MacroBars, EmptyState } from '../../components/ui';
+import { NUM } from '../../components/ui/styles';
 import { usingMockApi } from '../../api/client';
 import { WeekStrip } from './parts/WeekStrip';
 import { WaterQuickAdd } from './parts/WaterQuickAdd';
@@ -87,7 +88,7 @@ export default function HomeScreen({ navigation }: Props) {
           ? remainingKcal >= 0
             ? `${formatKcal(remainingKcal)} left`
             : `${formatKcal(-remainingKcal)} over`
-          : `${formatKcal(totals.calories)} in`,
+          : `${formatKcal(totals.calories)} logged`,
     },
     { icon: 'water-outline', text: `${formatMl(waterToday)} / ${formatMl(goalMl)}` },
   ];
@@ -278,12 +279,12 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingTop: 14 },
   dayStrip: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, marginTop: 14, gap: 10 },
   dayItem: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 6 },
-  dayItemText: { fontSize: 12.5, fontFamily: fontFamilies.regular },
-  avatar: { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center' },
+  dayItemText: { fontSize: 12.5, fontFamily: fontFamilies.regular, ...NUM },
+  avatar: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
   headerText: { flex: 1 },
-  bellChip: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
+  bellChip: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
   greeting: { fontSize: 20, fontWeight: '700', fontFamily: fontFamilies.semibold },
-  dateLine: { fontSize: 12.5, marginTop: 1, fontFamily: fontFamilies.regular },
+  dateLine: { fontSize: 12.5, marginTop: 1, fontFamily: fontFamilies.regular, ...NUM },
   hero: {
     alignSelf: 'stretch',
     marginHorizontal: 16,
@@ -297,20 +298,20 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   heroNumbers: { flex: 1, gap: 2 },
-  heroBig: { fontSize: 30, fontFamily: fontFamilies.semibold, letterSpacing: -0.5 },
-  heroUnit: { fontSize: 14, fontFamily: fontFamilies.regular },
-  heroSub: { fontSize: 12.5, fontFamily: fontFamilies.regular },
+  heroBig: { fontSize: 30, fontFamily: fontFamilies.semibold, letterSpacing: -0.5, ...NUM },
+  heroUnit: { fontSize: 14, fontFamily: fontFamilies.regular, ...NUM },
+  heroSub: { fontSize: 12.5, fontFamily: fontFamilies.regular, ...NUM },
   ringEaten: { alignItems: 'center' },
-  ringEatenValue: { fontSize: 19, fontWeight: '600', fontFamily: fontFamilies.semibold },
+  ringEatenValue: { fontSize: 19, fontWeight: '600', fontFamily: fontFamilies.semibold, ...NUM },
   ringEatenLabel: { fontSize: 10.5, fontFamily: fontFamilies.regular },
-  heroCta: { paddingHorizontal: 14, paddingVertical: 9, borderRadius: 999 },
+  heroCta: { paddingHorizontal: 16, paddingVertical: 12, minHeight: 44, justifyContent: 'center', borderRadius: 999 },
   heroCtaText: { fontSize: 13, fontFamily: fontFamilies.medium },
   macroCard: { marginHorizontal: 16, marginTop: 12, borderRadius: 22, paddingVertical: 12, paddingHorizontal: 14 },
   macroCardTitle: { fontSize: 15, fontWeight: '600', fontFamily: fontFamilies.semibold, marginBottom: 10 },
   section: { fontSize: 13, fontWeight: '600', paddingHorizontal: 16, marginTop: 16, marginBottom: 6, fontFamily: fontFamilies.semibold },
   weekHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
   weekTitle: { fontSize: 15, fontWeight: '600', fontFamily: fontFamilies.semibold },
-  weekMeta: { fontSize: 12, fontFamily: fontFamilies.regular },
+  weekMeta: { fontSize: 12, fontFamily: fontFamilies.regular, ...NUM },
   weekCard: { marginHorizontal: 16, marginTop: 12, borderRadius: 22, paddingVertical: 12, paddingHorizontal: 14 },
   insightRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginHorizontal: 16, marginTop: 12, borderRadius: 16, paddingVertical: 10, paddingHorizontal: 12 },
   insightIcon: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },

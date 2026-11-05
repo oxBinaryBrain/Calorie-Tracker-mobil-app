@@ -51,7 +51,7 @@ const STEP_COUNT = 3;
 // One place for everything that changes per step: heading, subline that sets
 // expectations, and the small icon that anchors the step visually.
 const STEP_META: Array<{ title: string; sub: string; icon: string }> = [
-  { title: 'A few basics', sub: 'Just numbers — height, weight, age.', icon: 'ruler' },
+  { title: 'A few basics', sub: 'Just numbers: height, weight, age.', icon: 'ruler' },
   { title: 'About you', sub: 'This shapes your daily estimate.', icon: 'account-outline' },
   { title: 'Your goal', sub: 'Where would you like to head?', icon: 'flag-outline' },
 ];
@@ -233,7 +233,7 @@ export function OnboardingScreen({ navigation }: NativeStackScreenProps<Onboardi
                   ]
                     .filter(Boolean)
                     .join(' · ')}
-                  {values.goal ? ` — ${GOAL_LABELS[values.goal].toLowerCase()}` : ''}
+                  {values.goal ? ` · ${GOAL_LABELS[values.goal].toLowerCase()}` : ''}
                 </Text>
               </View>
             </>
@@ -305,7 +305,7 @@ export function TargetRevealScreen({ route, navigation }: NativeStackScreenProps
     <Animated.View style={[styles.flex, { backgroundColor: theme.colors.background, paddingTop: insets.top, opacity: fade, transform: [{ translateY: rise }] }]}>
       <Text style={[styles.revealTitle, { color: theme.colors.onBackground }]}>Your daily picture</Text>
       <Text style={[styles.revealSub, { color: theme.colors.onSurfaceVariant }]}>
-        A starting point you can adjust any time — it guides, it doesn't restrict.
+        A starting point you can adjust any time. It guides, it doesn't restrict.
       </Text>
       <View style={styles.ringWrap}>
         <CalorieRing consumed={0} target={shown.dailyCalories} size={200} />

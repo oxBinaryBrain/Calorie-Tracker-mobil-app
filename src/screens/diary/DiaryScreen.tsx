@@ -105,14 +105,16 @@ export default function DiaryScreen({ navigation }: Props) {
   // The summary only changes when the underlying data or month changes; the
   // header render is pure from these memoized values.
   const summaryNode = React.useMemo(() => {
+    // These count days, not entries: "Meals · 3" would read as three meals
+    // even on a day with six. The labels say "days" for that reason.
     const rows: Array<{ label: string; n: number }> = [
-      { label: 'Meals', n: summary.meals },
-      { label: 'Workouts', n: summary.workouts },
-      { label: 'Trackers', n: summary.trackers },
+      { label: 'Meal days', n: summary.meals },
+      { label: 'Workout days', n: summary.workouts },
+      { label: 'Tracker days', n: summary.trackers },
     ];
     const onSurface = theme.colors.onSurfaceVariant;
     return (
-      <View style={styles.monthSummary} pointerEvents="none">
+      <View style={[styles.monthSummary, { pointerEvents: 'none' }]}>
         {rows.map((r) => (
           <MonthDot
             key={r.label}
@@ -147,6 +149,36 @@ export default function DiaryScreen({ navigation }: Props) {
     await qc.invalidateQueries({ queryKey: ['trackers'] });
     setRefreshing(false);
   }, [qc]);
+
+  // The library merges theme['stylesheet.day.basic'] over its own day styles,
+  // but its TS type does not declare that key, so cast through unknown.
+  const calendarTheme = {
+    calendarBackground: 'transparent',
+    dayTextColor: theme.colors.onSurface,
+    // De-emphasized but still readable: the theme's secondary text color
+    // (gray600 light / gray400 dark). The previous gray200 measured 1.19:1
+    // in the light-mode QA pass.
+    textDisabledColor: theme.colors.onSurfaceVariant,
+    // Weekday headers (Mon–Sun) previously used the library's default
+    // light gray (1.74:1); they now follow the theme's secondary text.
+    textSectionTitleColor: theme.colors.onSurfaceVariant,
+    monthTextColor: theme.colors.onBackground,
+    arrowColor: theme.colors.onSurface,
+    todayTextColor: theme.colors.primary,
+    selectedDayBackgroundColor: theme.colors.primaryContainer,
+    selectedDayTextColor: theme.colors.onPrimaryContainer,
+    dotColor: theme.colors.primary,
+    textDayFontFamily: fontFamilies.regular,
+    textMonthFontFamily: fontFamilies.semibold,
+    textDayHeaderFontFamily: fontFamilies.medium,
+    // Day cells at 44pt tall so tapping a day clears the tap-target
+    // floor (the library default is 32x32).
+    'stylesheet.day.basic': {
+      base: { width: 40, height: 44, alignItems: 'center', justifyContent: 'center' },
+      today: { borderRadius: 20 },
+      selected: { borderRadius: 20 },
+    },
+  } as unknown as React.ComponentProps<typeof Calendar>['theme'];
 
   return (
     <LargeTitleScreen
@@ -187,26 +219,7 @@ export default function DiaryScreen({ navigation }: Props) {
             </View>
           );
         }}
-        theme={{
-          calendarBackground: 'transparent',
-          dayTextColor: theme.colors.onSurface,
-          // De-emphasized but still readable: the theme's secondary text color
-          // (gray600 light / gray400 dark). The previous gray200 measured 1.19:1
-          // in the light-mode QA pass.
-          textDisabledColor: theme.colors.onSurfaceVariant,
-          // Weekday headers (Mon–Sun) previously used the library's default
-          // light gray (1.74:1); they now follow the theme's secondary text.
-          textSectionTitleColor: theme.colors.onSurfaceVariant,
-          monthTextColor: theme.colors.onBackground,
-          arrowColor: theme.colors.onSurface,
-          todayTextColor: theme.colors.primary,
-          selectedDayBackgroundColor: theme.colors.primaryContainer,
-          selectedDayTextColor: theme.colors.onPrimaryContainer,
-          dotColor: theme.colors.primary,
-          textDayFontFamily: fontFamilies.regular,
-          textMonthFontFamily: fontFamilies.semibold,
-          textDayHeaderFontFamily: fontFamilies.medium,
-        }}
+        theme={calendarTheme}
         firstDay={1}
         // Accessibility: the library ships its own a11y labels; keep the
         // container identifiable for screen readers without hiding days.
@@ -269,7 +282,7 @@ function RecentDays({ onOpen }: { onOpen: (date: string) => void }) {
             key={d.date}
             onPress={() => onOpen(d.date)}
             accessibilityRole="button"
-            accessibilityLabel={`Open ${d.date} in Diary`}
+            accessibilityLabel={`Open ${d.date === today ? 'today' : dateFromKey(d.date).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })} in Diary`}
             android_ripple={{ color: theme.colors.surfaceVariant }}
             style={({ pressed }) => [
               styles.recentRow,

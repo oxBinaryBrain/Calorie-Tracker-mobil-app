@@ -29,7 +29,7 @@ export function LogBar({ onParsed }: {
       setSuggestions([]);
       onParsed(parsed, rawInput, photoUri);
     } catch (e) {
-      show(e instanceof Error ? e.message : 'Could not read that — try again');
+      show(e instanceof Error ? e.message : 'Could not read that, try again');
     } finally {
       setParsing(false);
     }
@@ -60,7 +60,7 @@ export function LogBar({ onParsed }: {
         { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG, base64: true },
       );
       if (!manipulated.base64) {
-        show('Could not read that photo — try again');
+        show('Could not read that photo, try again');
         return;
       }
       await parseAndNavigate('', manipulated.base64, manipulated.uri);
@@ -125,8 +125,7 @@ export function LogBar({ onParsed }: {
         {parsing || photoBusy ? <ActivityIndicator style={styles.inputAction} /> : null}
         <Pressable
           onPress={() => void openPhotoFlow()}
-          style={styles.camBtn}
-          hitSlop={8}
+          style={({ pressed }) => [styles.camBtn, pressed && { opacity: 0.6 }]}
           accessibilityRole="button"
           accessibilityLabel="Photograph your plate"
           disabled={parsing || photoBusy}
@@ -135,8 +134,11 @@ export function LogBar({ onParsed }: {
         </Pressable>
         <Pressable
           onPress={submitText}
-          style={[styles.sendBtn, { backgroundColor: input.trim() ? theme.colors.primary : theme.colors.surfaceVariant }]}
-          hitSlop={6}
+          style={({ pressed }) => [
+            styles.sendBtn,
+            { backgroundColor: input.trim() ? theme.colors.primary : theme.colors.surfaceVariant },
+            pressed && { opacity: 0.8, transform: [{ scale: 0.95 }] },
+          ]}
           accessibilityRole="button"
           accessibilityLabel="Log what you typed"
           disabled={!input.trim() || parsing}
@@ -200,8 +202,9 @@ const styles = StyleSheet.create({
   suggestRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 14, paddingVertical: 10 },
   suggestName: { fontSize: 13.5, fontFamily: fontFamilies.medium },
   suggestHint: { fontSize: 12, marginLeft: 'auto', fontFamily: fontFamilies.regular },
-  input: { flex: 1, backgroundColor: 'transparent', fontSize: 15 },
+  input: { flex: 1, backgroundColor: 'transparent', fontSize: 15, minHeight: 44 },
   inputAction: { marginHorizontal: 10 },
-  camBtn: { padding: 8 },
-  sendBtn: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
+  // 44pt tap targets, matching the rest of the chrome.
+  camBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  sendBtn: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
 });

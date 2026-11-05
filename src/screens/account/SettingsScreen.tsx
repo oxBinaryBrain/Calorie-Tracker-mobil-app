@@ -1,6 +1,6 @@
 import * as React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-import { Chip, Divider, List, Switch, useTheme } from 'react-native-paper';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Divider, List, Switch, useTheme } from 'react-native-paper';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AccountTabParams } from '../../navigation/types';
 import type { ThemePref } from '../../types';
@@ -8,10 +8,37 @@ import { usePrefs } from '../../stores';
 import { usingMockApi } from '../../api/client';
 import { useDayEntries, useTargets } from '../../hooks/queries';
 import { dateKey, formatKcal } from '../../utils';
-import { ChoiceGroup } from '../../components/inputs';
+import { ChoiceGroup, ChoicePill } from '../../components/inputs';
 import { InfoRow, Screen, SectionTitle } from '../../components/ui';
 
 type Props = NativeStackScreenProps<AccountTabParams, 'Settings'>;
+
+/** Whole row is the switch: a bare 20pt web Switch is too small to tap. */
+function SwitchRow({ label, value, onChange }: { label: string; value: boolean; onChange: (v: boolean) => void }) {
+  const theme = useTheme();
+  return (
+    <Pressable
+      onPress={() => onChange(!value)}
+      accessibilityRole="switch"
+      accessibilityState={{ checked: value }}
+      accessibilityLabel={label}
+      style={({ pressed }) => [styles.switchRow, pressed && { opacity: 0.7 }]}
+    >
+      <Text style={[styles.switchLabel, { color: theme.colors.onSurface }]} accessibilityElementsHidden importantForAccessibility="no">
+        {label}
+      </Text>
+      <Switch
+        value={value}
+        onValueChange={onChange}
+        pointerEvents="none"
+        accessibilityElementsHidden
+        importantForAccessibility="no"
+        aria-hidden={true}
+        style={styles.switch}
+      />
+    </Pressable>
+  );
+}
 
 const HOURS = [6, 7, 8, 12, 18, 20, 21];
 const THEME_OPTIONS: Array<{ value: ThemePref; label: string }> = [
@@ -52,16 +79,11 @@ export default function SettingsScreen() {
       <Divider style={styles.divider} />
 
       <SectionTitle text="Units" />
-      <View style={styles.switchRow}>
-        <Text style={{ color: theme.colors.onSurface }} accessibilityRole="text">
-          Metric (kg, cm)
-        </Text>
-        <Switch
-          value={units === 'metric'}
-          onValueChange={(v) => setUnits(v ? 'metric' : 'imperial')}
-          accessibilityLabel="Use metric units"
-        />
-      </View>
+      <SwitchRow
+        label="Metric (kg, cm)"
+        value={units === 'metric'}
+        onChange={(v) => setUnits(v ? 'metric' : 'imperial')}
+      />
       <Text style={[styles.hint, { color: theme.colors.onSurfaceVariant }]}>
         Imperial shows lb/oz labels where supported.
       </Text>
@@ -69,31 +91,20 @@ export default function SettingsScreen() {
       <Divider style={styles.divider} />
 
       <SectionTitle text="Daily reminder" />
-      <View style={styles.switchRow}>
-        <Text style={{ color: theme.colors.onSurface }} accessibilityRole="text">
-          Gentle nudge to log
-        </Text>
-        <Switch
-          value={reminderEnabled}
-          onValueChange={(v) => void setReminder(v)}
-          accessibilityLabel="Daily logging reminder"
-        />
-      </View>
+      <SwitchRow
+        label="Gentle nudge to log"
+        value={reminderEnabled}
+        onChange={(v) => void setReminder(v)}
+      />
       {reminderEnabled ? (
         <View style={styles.hours} accessibilityRole="radiogroup" accessibilityLabel="Reminder hour">
           {HOURS.map((h) => (
-            <Chip
+            <ChoicePill
               key={h}
+              label={`${h}:00`}
               selected={reminderHour === h}
               onPress={() => void setReminder(true, h)}
-              style={styles.chip}
-              compact
-              accessibilityRole="radio"
-              accessibilityState={{ selected: reminderHour === h }}
-              accessibilityLabel={`${h}:00`}
-            >
-              {h}:00
-            </Chip>
+            />
           ))}
         </View>
       ) : null}
@@ -117,7 +128,7 @@ export default function SettingsScreen() {
       <InfoRow label="Your data" value={usingMockApi ? 'On this device' : 'Synced'} />
       <Text style={[styles.hint, { color: theme.colors.onSurfaceVariant, marginBottom: 8 }]}>
         {usingMockApi
-          ? `Mock mode — everything is stored locally. ${loggedToday > 0 ? `Today: ${loggedToday} ${loggedToday === 1 ? 'item' : 'items'} logged` : 'Nothing logged yet today'}${dailyCalories ? ` · ${formatKcal(dailyCalories)} kcal target` : ''}.`
+          ? `Mock mode: everything is stored locally. ${loggedToday > 0 ? `Today: ${loggedToday} ${loggedToday === 1 ? 'item' : 'items'} logged` : 'Nothing logged yet today'}${dailyCalories ? ` · ${formatKcal(dailyCalories)} kcal target` : ''}.`
           : 'Your diary syncs with your Caloria backend.'}
       </Text>
     </Screen>
@@ -125,9 +136,11 @@ export default function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  switchRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8 },
+  // 44pt+ tall row so the whole line is the tap target for the switch.
+  switchRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, minHeight: 44 },
+  switchLabel: { fontSize: 14, flex: 1, marginRight: 12 },
+  switch: { height: 30 },
   hours: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 4 },
-  chip: { margin: 2 },
   hint: { fontSize: 12, marginTop: 4 },
   divider: { marginVertical: 14 },
 });

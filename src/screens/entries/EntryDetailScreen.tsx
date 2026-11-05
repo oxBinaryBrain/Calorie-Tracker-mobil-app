@@ -206,7 +206,7 @@ export default function EntryDetailScreen({ route, navigation }: Props) {
         show('Entry deleted');
         navigation.goBack();
       },
-      onError: () => show('Could not delete that — try again'),
+      onError: () => show('Could not delete that, try again'),
     });
   };
 
@@ -233,7 +233,7 @@ export default function EntryDetailScreen({ route, navigation }: Props) {
         caloriesBurned: match.caloriesBurned ?? undefined,
         note: match.note,
       });
-      show(saved ? 'Re-analyzed — numbers updated' : 'Could not re-analyze right now');
+      show(saved ? 'Re-analyzed, numbers updated' : 'Could not re-analyze right now');
     } catch {
       show('Could not re-analyze right now');
     } finally {

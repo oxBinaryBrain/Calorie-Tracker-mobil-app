@@ -68,6 +68,25 @@ export function formatDateLong(key: string): string {
   });
 }
 
+/**
+ * Like formatDateLong, but names the year whenever it is not the current one.
+ * A projected date months out without a year reads as a past date.
+ */
+export function formatDateLongWithYear(key: string, now: Date = new Date()): string {
+  const d = dateFromKey(key);
+  return d.toLocaleDateString(undefined, {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    ...(d.getFullYear() !== now.getFullYear() ? { year: 'numeric' } : {}),
+  });
+}
+
+/** "1 logged day" / "3 logged days" — count and noun in one string. */
+export function pluralCount(n: number, one: string, many: string): string {
+  return `${n} ${n === 1 ? one : many}`;
+}
+
 export function formatKcal(n: number): string {
   return Math.round(n).toLocaleString();
 }

@@ -23,6 +23,8 @@ export default function PaywallScreen({ navigation }: Props) {
   const show = useToasts((s) => s.show);
   const simulatedPro = usePrefs((s) => s.simulatedPro);
   const setSimulatedPro = usePrefs((s) => s.setSimulatedPro);
+  const proPlanId = usePrefs((s) => s.proPlanId);
+  const setProPlan = usePrefs((s) => s.setProPlan);
   const [plans, setPlans] = React.useState<PlanOption[]>([]);
   const [simulated, setSimulated] = React.useState(true);
   const [busy, setBusy] = React.useState<string | null>(null);
@@ -41,6 +43,7 @@ export default function PaywallScreen({ navigation }: Props) {
   const onPurchase = async (planId: string) => {
     if (planId === 'free') {
       setSimulatedPro(false);
+      setProPlan(null);
       setPro(false);
       show('Switched to the free plan');
       return;
@@ -50,19 +53,21 @@ export default function PaywallScreen({ navigation }: Props) {
       if (simulated) {
         // No store keys configured — simulate a calm successful upgrade.
         setSimulatedPro(true);
+        setProPlan(planId);
         setPro(true);
         show('Pro is on. Thanks for supporting Caloria.');
         return;
       }
       const ok = await purchase(planId as never);
       if (ok) {
+        setProPlan(planId);
         setPro(true);
         show('Pro is on. Thanks for supporting Caloria.');
       } else {
         show('Purchase did not complete');
       }
     } catch {
-      show('The store was unavailable — try again later');
+      show('The store was unavailable, try again later');
     } finally {
       setBusy(null);
     }
@@ -105,15 +110,20 @@ export default function PaywallScreen({ navigation }: Props) {
         </Text>
       )}
 
-      <View style={styles.plans}>
+      <View style={styles.plans} accessibilityRole="radiogroup" accessibilityLabel="Plans">
         {plans.map((plan) => {
-          const current = (plan.id === 'free' && !pro) || (plan.id !== 'free' && pro);
+          // Only the plan that was actually bought is current. Pro used to mark
+          // both monthly and yearly as current at the same time.
+          const current = pro ? plan.id === proPlanId : plan.id === 'free';
           return (
             <Card
               key={plan.id}
               mode="contained"
               style={[styles.planCard, current && { borderColor: theme.colors.primary }]}
               onPress={() => void onPurchase(plan.id)}
+              accessibilityRole="radio"
+              aria-checked={current}
+              accessibilityLabel={`${plan.title}, ${plan.priceLabel} ${plan.periodLabel}${current ? ', current plan' : ''}`}
             >
               <Card.Content>
                 <View style={styles.planRow}>

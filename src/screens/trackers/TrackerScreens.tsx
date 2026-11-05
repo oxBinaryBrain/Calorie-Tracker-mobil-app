@@ -1,6 +1,6 @@
 import * as React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-import { Button, Card, HelperText, SegmentedButtons, TextInput, useTheme } from 'react-native-paper';
+import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { Button, Card, HelperText, TextInput, useTheme } from 'react-native-paper';
 import type { MD3Theme } from 'react-native-paper';
 import { LineChart } from 'react-native-gifted-charts';
 import { useQueryClient } from '@tanstack/react-query';
@@ -9,10 +9,12 @@ import type { TrackersTabParams } from '../../navigation/types';
 import type { SleepQuality } from '../../types';
 import { useDayTracker, useTrackerRange, useUpsertTracker, useProfile } from '../../hooks/queries';
 import { useWaterDay } from '../../hooks/useWaterDay';
-import { addDays, dateFromKey, dateKey, formatDateLong, formatMl } from '../../utils';
+import { addDays, dateFromKey, dateKey, formatDateLongWithYear, formatMl } from '../../utils';
 import { waterGoalMet } from '../../services/targets';
 import { planWeightGoal, type WeightPoint } from '../../services/weight';
 import { QuickChip, Screen, SectionTitle, EmptyState } from '../../components/ui';
+import { ChoiceGroup } from '../../components/inputs';
+import { NUM } from '../../components/ui/styles';
 
 type WaterProps = NativeStackScreenProps<TrackersTabParams, 'Water'>;
 type WeightProps = NativeStackScreenProps<TrackersTabParams, 'Weight'>;
@@ -151,6 +153,12 @@ export function WeightScreen({ route }: WeightProps) {
   const { refreshing, onRefresh } = useRefresh();
   const [text, setText] = React.useState('');
   const focusedRef = React.useRef(false);
+  // The trend chart used to hard-code its width (340), which ran past the card
+  // and off the screen on phones. Size the plot from the viewport and leave
+  // room for screen padding (32), card padding (32), the y-axis labels (34)
+  // and the chart's own margin (20).
+  const { width: viewportWidth } = useWindowDimensions();
+  const trendChartWidth = Math.max(140, Math.min(viewportWidth - 118, 520));
 
   React.useEffect(() => {
     if (!focusedRef.current) {
@@ -240,7 +248,7 @@ export function WeightScreen({ route }: WeightProps) {
             ) : (
               <>
                 <Text style={[styles.planLine, { color: theme.colors.onSurfaceVariant }]}>
-                  {Math.abs(plan.remainingKg).toFixed(1)} kg {plan.remainingKg < 0 ? 'to lose' : 'to gain'} remaining
+                  {Math.abs(plan.remainingKg).toFixed(1)} kg to goal
                 </Text>
                 {plan.paceKgPerWeek != null ? (
                   <Text style={[styles.planLine, { color: theme.colors.onSurfaceVariant }]}>
@@ -250,7 +258,7 @@ export function WeightScreen({ route }: WeightProps) {
                 ) : null}
                 {plan.weeksLeft != null && plan.etaDate ? (
                   <Text style={[styles.planLine, { color: theme.colors.onSurfaceVariant }]}>
-                    At this pace: {formatDateLong(plan.etaDate)} (about {Math.max(1, Math.round(plan.weeksLeft))}{' '}
+                    At this pace: {formatDateLongWithYear(plan.etaDate)} (about {Math.max(1, Math.round(plan.weeksLeft))}{' '}
                     {Math.round(plan.weeksLeft) === 1 ? 'week' : 'weeks'})
                   </Text>
                 ) : (
@@ -281,7 +289,8 @@ export function WeightScreen({ route }: WeightProps) {
           <Card.Content>
             <LineChart
               data={points}
-              width={340}
+              width={trendChartWidth}
+              yAxisLabelWidth={34}
               height={180}
               curved
               color={theme.colors.primary}
@@ -386,24 +395,24 @@ export function SleepScreen({ route }: SleepProps) {
       ) : null}
 
       <SectionTitle text="How did it feel?" />
-      <View accessibilityRole="radiogroup" accessibilityLabel="Sleep quality">
-        <SegmentedButtons
-          value={current?.sleepQuality ?? ''}
-          onValueChange={(v) => setQuality(v as SleepQuality)}
-          buttons={[
-            { value: 'poor', label: 'Rough' },
-            { value: 'fair', label: 'Fair' },
-            { value: 'good', label: 'Good' },
-          ]}
-          density="small"
-        />
-      </View>
+      {/* Same pill radios as the theme picker, 44pt tall, proper radiogroup. */}
+      <ChoiceGroup
+        label="Sleep quality"
+        options={[
+          { value: 'poor', label: 'Rough' },
+          { value: 'fair', label: 'Fair' },
+          { value: 'good', label: 'Good' },
+        ]}
+        value={current?.sleepQuality}
+        onChange={(v) => setQuality(v)}
+        columns={3}
+      />
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  sub: { fontSize: 13.5, marginTop: 2, marginBottom: 4 },
+  sub: { fontSize: 13.5, marginTop: 2, marginBottom: 4, ...NUM },
   goalNote: { fontSize: 12, marginBottom: 8 },
   progressTrack: { height: 10, borderRadius: 5, marginTop: 10, overflow: 'hidden' },
   progressFill: { height: 10, borderRadius: 5 },
@@ -412,11 +421,11 @@ const styles = StyleSheet.create({
   histStrip: { flexDirection: 'row', alignItems: 'flex-end' },
   histCol: { flex: 1, alignItems: 'center', gap: 4 },
   histSlot: { height: 44, justifyContent: 'flex-end', width: '100%', alignItems: 'center' },
-  histLabel: { fontSize: 10.5 },
-  histNote: { fontSize: 12, marginTop: 8 },
-  field: { marginTop: 6, marginBottom: 4 },
+  histLabel: { fontSize: 10.5, ...NUM },
+  histNote: { fontSize: 12, marginTop: 8, ...NUM },
+  field: { marginTop: 6, marginBottom: 4, borderRadius: 12 },
   saveBtn: { alignSelf: 'flex-start', marginBottom: 12 },
   chartCard: { borderRadius: 16 },
-  planTitle: { fontSize: 15, fontWeight: '600', marginBottom: 6 },
-  planLine: { fontSize: 13, lineHeight: 20 },
+  planTitle: { fontSize: 15, fontWeight: '600', marginBottom: 6, ...NUM },
+  planLine: { fontSize: 13, lineHeight: 20, ...NUM },
 });

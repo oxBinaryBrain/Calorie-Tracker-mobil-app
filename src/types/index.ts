@@ -106,6 +106,8 @@ export type Settings = {
   reminderHour: number; // 0-23, local time
   /** User-set daily water goal in ml; null/absent means derive from profile. */
   waterGoalMl?: number | null;
+  /** The Pro plan the user actually chose ("pro_monthly" | "pro_yearly"). */
+  proPlanId?: string | null;
 };
 
 /** Payload for editing a target set (server may recompute from profile instead). */

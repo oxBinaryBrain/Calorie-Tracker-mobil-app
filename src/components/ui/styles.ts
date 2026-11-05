@@ -7,6 +7,13 @@ export const POPP_MED = { fontFamily: fontFamilies.medium };
 export const POPP_SEMI = { fontFamily: fontFamilies.semibold };
 export const POPP_BOLD = { fontFamily: fontFamilies.bold };
 
+/**
+ * Tabular numerals for anything that counts: kcal, grams, ml, percentages,
+ * chart axes, times. Without this, digits change width as values update and
+ * every number in a row jitters.
+ */
+export const NUM = { fontVariant: ['tabular-nums' as const] };
+
 export const styles = StyleSheet.create({
   flex: { flex: 1 },
   screenInner: { padding: 16, gap: 12 },
@@ -32,45 +39,47 @@ export const styles = StyleSheet.create({
   compactSideRight: { minWidth: 40, alignItems: 'flex-end' },
   compactTitle: { flex: 1, textAlign: 'center', fontSize: 17, fontWeight: '600', ...POPP_SEMI },
   ringCenter: { position: 'absolute', alignItems: 'center', paddingHorizontal: 16 },
-  ringValue: { fontSize: 34, fontWeight: '600', ...POPP_SEMI },
-  ringSub: { fontSize: 12.5, marginTop: 2, textAlign: 'center', ...POPP_REG },
+  ringValue: { fontSize: 34, fontWeight: '600', ...POPP_SEMI, ...NUM },
+  ringSub: { fontSize: 12.5, marginTop: 2, textAlign: 'center', ...POPP_REG, ...NUM },
   macroWrap: { gap: 8 },
   macroRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   macroDot: { width: 8, height: 8, borderRadius: 4 },
   macroLabel: { width: 56, fontSize: 13, ...POPP_REG },
   macroTrack: { flex: 1, height: 8, borderRadius: 4, overflow: 'hidden' },
   macroFill: { height: 8, borderRadius: 4 },
-  macroValue: { width: 84, fontSize: 12, textAlign: 'right', ...POPP_MED },
+  macroValue: { width: 84, fontSize: 12, textAlign: 'right', ...POPP_MED, ...NUM },
   toastHost: { position: 'absolute', bottom: 90, left: 16, right: 16, alignItems: 'center', zIndex: 10 },
   toast: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20, elevation: 2 },
   tile: { borderRadius: 16, flex: 1 },
   tileLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   tileLabel: { fontSize: 12, flexShrink: 1, ...POPP_MED },
-  tileValue: { fontSize: 20, fontWeight: '600', marginTop: 2, ...POPP_SEMI },
-  tileHint: { fontSize: 11.5, marginTop: 2, ...POPP_REG },
+  tileValue: { fontSize: 20, fontWeight: '600', marginTop: 2, ...POPP_SEMI, ...NUM },
+  tileHint: { fontSize: 11.5, marginTop: 2, ...POPP_REG, ...NUM },
   infoRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 10 },
   infoLabel: { fontSize: 14, ...POPP_REG },
-  infoValue: { fontSize: 14, fontWeight: '500', ...POPP_MED },
+  infoValue: { fontSize: 14, fontWeight: '500', ...POPP_MED, ...NUM },
   pressRow: { paddingVertical: 13, flexDirection: 'row', alignItems: 'center' },
   pressRowIcon: { marginRight: 12 },
   pressRowLabel: { flex: 1, ...POPP_REG },
   empty: { alignItems: 'center', paddingVertical: 36, gap: 4 },
   emptyTitle: { fontSize: 15, fontWeight: '500', ...POPP_MED },
   emptyMsg: { fontSize: 13, textAlign: 'center', maxWidth: 260, ...POPP_REG },
-  chip: { margin: 2 },
+  // Shape lock: pills are 999, cards/tiles 16, inputs 12. Quick chips reach
+  // 44pt tall so they clear the tap-target floor without growing wide.
+  chip: { margin: 2, minHeight: 44 },
   section: { fontSize: 13, fontWeight: '600', letterSpacing: 0.3, marginTop: 8, ...POPP_SEMI },
   entryCard: { borderRadius: 16, marginBottom: 8, overflow: 'hidden' },
   entryEdge: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 4 },
   entryContent: { flexDirection: 'row', gap: 12, alignItems: 'flex-start' },
   entryThumb: {
-    width: 64, height: 64, borderRadius: 14, alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
+    width: 64, height: 64, borderRadius: 16, alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
   },
   entryLeft: { flex: 1, gap: 3 },
   entryTitleRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 },
   entryTitle: { fontSize: 15.5, flexShrink: 1, ...POPP_MED },
-  entryTime: { fontSize: 11.5, ...POPP_REG },
-  entryKcal: { fontSize: 15, fontWeight: '600', ...POPP_SEMI },
+  entryTime: { fontSize: 11.5, ...POPP_REG, ...NUM },
+  entryKcal: { fontSize: 15, fontWeight: '600', ...POPP_SEMI, ...NUM },
   entryChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 2 },
   entryChip: { flexDirection: 'row', alignItems: 'center', gap: 3, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3, maxWidth: '100%' },
-  entryChipText: { fontSize: 11, ...POPP_MED },
+  entryChipText: { fontSize: 11, ...POPP_MED, ...NUM },
 });

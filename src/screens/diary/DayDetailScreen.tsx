@@ -63,7 +63,7 @@ export default function DayDetailScreen({ route, navigation }: Props) {
       setNaming(false);
       setName('');
     } catch {
-      show('Could not save that — try again');
+      show('Could not save that, try again');
     }
   };
 

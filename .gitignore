@@ -44,6 +44,7 @@ yarn-error.*
 # local tool artifacts
 .freebuff/
 .playwright-mcp/
+.audit/
 
 # verification screenshots taken at the repo root during development
 /*.png

@@ -4,6 +4,7 @@ import { useTheme } from 'react-native-paper';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { formatMl } from '../../../utils';
 import { fontFamilies, semantic } from '../../../theme';
+import { NUM } from '../../../components/ui/styles';
 
 /** Quick water chips against the personalized goal (inline on Home). */
 export function WaterQuickAdd({ loggedMl, goalMl, onAdd }: {
@@ -23,7 +24,11 @@ export function WaterQuickAdd({ loggedMl, goalMl, onAdd }: {
           onPress={() => onAdd(ml)}
           accessibilityRole="button"
           accessibilityLabel={`Add ${ml} milliliters of water`}
-          style={[styles.waterChip, { backgroundColor: s.waterTint }]}>
+          style={({ pressed }) => [
+            styles.waterChip,
+            { backgroundColor: s.waterTint },
+            pressed && { opacity: 0.7 },
+          ]}>
           <MaterialCommunityIcons name="plus" size={14} color={theme.colors.primary} accessibilityElementsHidden importantForAccessibility="no" />
           <Text style={[styles.waterChipText, { color: theme.colors.primary }]}>+{ml}</Text>
         </Pressable>
@@ -42,10 +47,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 2,
     paddingHorizontal: 12,
-    paddingVertical: 7,
+    paddingVertical: 10,
+    minHeight: 40,
     borderRadius: 999,
   },
-  waterChipText: { fontSize: 12.5, fontWeight: '600', fontFamily: fontFamilies.semibold },
+  waterChipText: { fontSize: 12.5, fontWeight: '600', fontFamily: fontFamilies.semibold, ...NUM },
   waterLabel: { fontSize: 12.5, marginRight: 2, fontFamily: fontFamilies.regular },
-  waterGoal: { flex: 1, textAlign: 'right', fontSize: 12.5, fontFamily: fontFamilies.regular },
+  waterGoal: { flex: 1, textAlign: 'right', fontSize: 12.5, fontFamily: fontFamilies.regular, ...NUM },
 });

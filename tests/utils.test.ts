@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { addDays, clamp, dateFromKey, dateKey, dayBoundsIso, formatDuration, formatGrams, formatKcal, formatMl, greeting, localDayKey, mealSlot, monthEndKey, monthKeyOf, toNum, weekStartKey } from '../src/utils';
+import { addDays, clamp, dateFromKey, dateKey, dayBoundsIso, formatDateLongWithYear, formatDuration, formatGrams, formatKcal, formatMl, greeting, localDayKey, mealSlot, monthEndKey, monthKeyOf, pluralCount, toNum, weekStartKey } from '../src/utils';
 
 describe('dateKey / dateFromKey', () => {
   it('formats local time as YYYY-MM-DD with zero padding', () => {
@@ -89,6 +89,28 @@ describe('dayBoundsIso', () => {
       expect(iso >= fromIso && iso < toIso).toBe(true);
     }
     expect(new Date(2026, 8, 23, 0, 1).toISOString() >= toIso).toBe(true);
+  });
+});
+
+describe('formatDateLongWithYear', () => {
+  const now = new Date(2026, 9, 20, 12);
+
+  it('omits the year inside the current one', () => {
+    expect(formatDateLongWithYear('2026-10-24', now)).not.toContain('2026');
+    expect(formatDateLongWithYear('2026-10-24', now)).toContain('October');
+  });
+
+  it('names the year for a projected date in another year', () => {
+    expect(formatDateLongWithYear('2027-09-03', now)).toContain('2027');
+    expect(formatDateLongWithYear('2025-09-03', now)).toContain('2025');
+  });
+});
+
+describe('pluralCount', () => {
+  it('uses the singular for one and the plural otherwise', () => {
+    expect(pluralCount(1, 'logged day', 'logged days')).toBe('1 logged day');
+    expect(pluralCount(0, 'logged day', 'logged days')).toBe('0 logged days');
+    expect(pluralCount(3, 'logged day', 'logged days')).toBe('3 logged days');
   });
 });
 

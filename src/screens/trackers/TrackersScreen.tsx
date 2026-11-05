@@ -107,6 +107,8 @@ export default function TrackersScreen({ navigation }: Props) {
         mode="contained"
         style={styles.card}
         onPress={() => navigation.navigate('Water', { date: today })}
+        accessibilityRole="button"
+        accessibilityLabel={`Water, ${formatMl(waterMl)} of ${formatMl(goalMl)}. ${met ? 'Goal met' : `${formatMl(waterLeftMl)} left`}`}
       >
         <Card.Content>
           <View style={styles.row}>
@@ -151,6 +153,8 @@ export default function TrackersScreen({ navigation }: Props) {
           mode="contained"
           style={styles.card}
           onPress={() => navigation.navigate(card.route, { date: today })}
+          accessibilityRole="button"
+          accessibilityLabel={`${card.title}, ${card.value}. ${card.detail}`}
         >
           <Card.Content>
             <View style={styles.row}>

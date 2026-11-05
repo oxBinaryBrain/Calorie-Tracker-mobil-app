@@ -209,6 +209,22 @@ export function LargeTitleScreen({ title, children, right, contentContainerStyle
     [scrollY],
   );
 
+  // The compact bar starts transparent but still sits in the accessibility
+  // tree, so a screen reader would announce the page title twice (and the
+  // decorative avatar) before anything has scrolled. Track the crossing only,
+  // not every scroll frame, so this does not re-render while scrolling.
+  const [barVisible, setBarVisible] = React.useState(false);
+  const barVisibleRef = React.useRef(false);
+  React.useEffect(() => {
+    const id = scrollY.addListener(({ value }) => {
+      const next = value > 24;
+      if (next === barVisibleRef.current) return;
+      barVisibleRef.current = next;
+      setBarVisible(next);
+    });
+    return () => scrollY.removeListener(id);
+  }, [scrollY]);
+
   return (
     <View style={[styles.flex, { backgroundColor: theme.colors.background }]}>
       <Animated.ScrollView
@@ -243,10 +259,13 @@ export function LargeTitleScreen({ title, children, right, contentContainerStyle
 
       {/* Fixed compact bar; box-none lets scroll touches pass through. */}
       <Animated.View
-        pointerEvents="box-none"
+        accessibilityElementsHidden={!barVisible}
+        importantForAccessibility={barVisible ? 'auto' : 'no-hide-descendants'}
+        aria-hidden={!barVisible}
         style={[
           styles.compactBar,
           {
+            pointerEvents: 'box-none',
             paddingTop: insets.top,
             height: COMPACT_BAR_HEIGHT + insets.top,
             opacity: barOpacity,

@@ -11,6 +11,7 @@ import { useProfile } from '../../hooks/queries';
 import { useWaterGoal } from '../../hooks/useWaterDay';
 import { formatMl } from '../../utils';
 import { fontFamilies, semantic } from '../../theme';
+import { NUM } from '../../components/ui/styles';
 import { LargeTitleScreen, PressableRow, SectionTitle } from '../../components/ui';
 
 type Props = NativeStackScreenProps<AccountTabParams, 'Account'>;
@@ -43,7 +44,7 @@ function SectionHeaderRow({ title, onPress }: { title: string; onPress: () => vo
       <SectionTitle text={title} style={styles.sectionRowTitle} />
       <Pressable
         onPress={onPress}
-        hitSlop={10}
+        style={({ pressed }) => [styles.sectionEditBtn, pressed && { opacity: 0.6 }]}
         accessibilityRole="button"
         accessibilityLabel={`Edit ${title.toLowerCase()}`}
       >
@@ -128,11 +129,12 @@ export default function AccountScreen({ navigation }: Props) {
           </View>
           <IconButton
             icon="cog"
-            size={24}
+            size={22}
             iconColor={theme.colors.onSurfaceVariant}
             onPress={() => navigation.navigate('Settings')}
             accessibilityLabel="Settings"
             accessibilityRole="button"
+            style={styles.iconBtn}
           />
         </Card.Content>
       </Card>
@@ -215,14 +217,16 @@ const styles = StyleSheet.create({
   },
   sectionRowTitle: { marginTop: 0 },
   sectionAction: { fontSize: 13, fontFamily: fontFamilies.medium },
+  sectionEditBtn: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 8, marginRight: -8 },
   sectionGap: { marginTop: 16 },
   card: { borderRadius: 16 },
   factGrid: { flexDirection: 'row', flexWrap: 'wrap', rowGap: 12 },
   fact: { width: '50%' },
   factLabel: { fontSize: 12, fontFamily: fontFamilies.medium },
-  factValue: { fontSize: 15, fontFamily: fontFamilies.semibold, marginTop: 1 },
+  factValue: { fontSize: 15, fontFamily: fontFamilies.semibold, marginTop: 1, ...NUM },
   note: { fontSize: 13.5, fontFamily: fontFamilies.regular, marginBottom: 4 },
   gap0: { paddingVertical: 2, paddingHorizontal: 16 },
-  signOut: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 20, padding: 8 },
+  signOut: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 20, minHeight: 44, paddingHorizontal: 8 },
   signOutText: { fontSize: 14.5, fontFamily: fontFamilies.regular },
+  iconBtn: { width: 44, height: 44, margin: -10 },
 });
